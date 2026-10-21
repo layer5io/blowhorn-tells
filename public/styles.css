@@ -742,6 +742,22 @@ main { padding-bottom: 60px; }
 
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+.panel-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.panel-controls .muted {
+  margin-right: auto;
+}
+
+.panel-controls .button-secondary {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
 .masonry {
   columns: 2 360px;
   column-gap: 24px;
