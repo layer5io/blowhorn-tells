@@ -17,21 +17,34 @@
 
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
-  <header class="hero">
-    <nav class="topbar" aria-label="Site">
+  <a class="skip-link" href="#main">Skip to the results</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
       <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
-        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="160" height="32">
-        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="Blowhorn" width="160" height="32">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
       </a>
-      <span class="brand-tag">Tells</span>
-    </nav>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+  <section class="hero" aria-labelledby="pageTitle">
     <div class="hero-copy">
       <p class="eyebrow">Free bot detection test</p>
-      <h1>Am I a Bot?</h1>
+      <h1 id="pageTitle">Am I a Bot?</h1>
       <p class="lede">What websites can see about your browser. Every bot-detection and fingerprinting tell this page can read, in plain words.</p>
-      <div class="major-line">
-        <p class="bubble">Stand at attention. Scripts too: point your Playwright or Puppeteer run here and read the JSON.</p>
-      </div>
+      <aside class="dev-note" aria-label="For developers">
+        <p class="label">For developers</p>
+        <p>Stand at attention. Scripts too: point your Playwright or Puppeteer run here and read the JSON.</p>
+      </aside>
     </div>
     <div class="hero-visual">
       <figure class="mascot-tile">
@@ -70,14 +83,12 @@
     </div>
     <div class="actions">
       <button id="runBtn" class="button-primary" type="button">Run the inspection</button>
-      <button id="copyBtn" type="button" disabled>Copy JSON</button>
-      <button id="downloadBtn" type="button" disabled>Download JSON</button>
-      <a class="action-link" href="https://github.com/layer5io/blowhorn-tells" target="_blank"
-        rel="noopener noreferrer">Source on GitHub</a>
+      <button id="copyBtn" class="button-secondary" type="button" disabled>Copy JSON</button>
+      <button id="downloadBtn" class="button-secondary" type="button" disabled>Download JSON</button>
     </div>
-  </header>
+  </section>
 
-  <main>
+  <main id="main">
     <section class="panel summary-panel" aria-live="polite">
       <img id="verdictFigure" class="verdict-figure" src="/assets/brand/sleeper-cell-base.webp" width="72" height="72"
         alt="Sleeper Cell, the unit's privacy scout, sweeping for bots with a radar">
@@ -89,7 +100,7 @@
       <div id="scoreCard" class="score-card pending">Inspecting</div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="checks">
       <h2>Checks performed</h2>
       <div class="table-wrap">
         <table id="coverageTable">
@@ -271,8 +282,70 @@
   </main>
 
   <footer class="site-footer">
-    <p>When this page opens, it runs checks in your browser and sends the readings to this site's server, which scores them and sends the result back. This site keeps no copy and no logs. Two outside services see your IP address: the server sends it, and nothing else, to ipapi.is to spot proxies and VPNs, and the WebRTC check asks Google's public STUN server for your address.</p>
-    <p><a href="https://blowhorn.ai/">blowhorn.ai</a> · <a href="https://github.com/layer5io/blowhorn-tells">Source</a> · Apache-2.0</p>
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+          <section class="footer-privacy" aria-labelledby="privacyTitle">
+            <h2 class="footer-title" id="privacyTitle">What this page sends</h2>
+            <ul>
+              <li>When this page opens, it runs checks in your browser and sends the readings to this site's server, which scores them and sends the result back.</li>
+              <li>This site keeps no copy and no logs.</li>
+              <li>Two outside services see your IP address: the server sends it, and nothing else, to ipapi.is to spot proxies and VPNs, and the WebRTC check asks Google's public STUN server for your address.</li>
+            </ul>
+          </section>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="#checks">Checks performed</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells/issues">Report a problem</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells/blob/master/LICENSE">Apache-2.0 license</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Resources</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/field-manual/">Field Manual</a></li>
+              <li><a href="https://blowhorn.ai/major/">Meet Major</a></li>
+              <li><a href="https://blowhorn.ai/brand/">Brand</a></li>
+              <li><a href="https://blowhorn.ai/docs/reference/support/">Get help</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Trust</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/legal/">Trust Center</a></li>
+              <li><a href="https://blowhorn.ai/legal/privacy/">Privacy</a></li>
+              <li><a href="https://blowhorn.ai/legal/terms/">Terms</a></li>
+              <li><a href="mailto:security@blowhorn.ai">Security</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+        <a class="status-link" href="https://layer5.statuspage.io" target="_blank" rel="noreferrer">Status <span class="pulse-icon" aria-hidden="true"></span></a>
+      </div>
+    </div>
   </footer>
 
   <script src="/app.js" type="module"></script>
