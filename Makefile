@@ -14,34 +14,16 @@
 
 include .github/build/Makefile.show-help.mk
 
-## Install docs.layer5.io dependencies on your local machine.
-## See https://gohugo.io/categories/installation
+## Install dependencies (Node 24 and corepack).
 setup:
-	npm install
+	corepack enable && pnpm install --frozen-lockfile
 
-## Run docs.layer5.io on your local machine with draft and future content enabled.
-site: check-go
-	hugo server -D -F
-	
-## Run docs.layer5.io on your local machine. Alternate method.
-site-fast:
-	gatsby develop
+## Run the Worker and its pages locally with Wrangler.
+dev:
+	pnpm dev
 
-## Build docs.layer5.io on your local machine.
-build:
-	hugo
+## Syntax check, unit tests and Worker end-to-end tests.
+test:
+	pnpm test:all
 
-## Empty build cache and run docs.layer5.io on your local machine.
-clean: 
-	hugo --cleanDestinationDir
-	make site
-
-.PHONY: setup build site clean site-fast check-go
-
-check-go:
-	@echo "Checking if Go is installed..."
-	@command -v go > /dev/null || (echo "Go is not installed. Please install it before proceeding."; exit 1)
-	@echo "Go is installed."
-
-docker:
-	docker compose watch
+.PHONY: setup dev test

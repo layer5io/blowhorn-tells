@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="Am I a Bot? checks browser, network, and worker signals to help you understand whether a session looks automated.">
+  <meta name="theme-color" content="#07090f">
+  <title>Am I a Bot?</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <header class="hero">
+    <div class="hero-copy">
+      <a class="brand" href="/" aria-label="Am I a Bot home">
+        <span class="brand-mark" aria-hidden="true">?</span>
+        <span>Am I a Bot?</span>
+      </a>
+      <h1>Find out how automated this visit looks.</h1>
+      <p class="lede">Run a transparent detection report across browser behaviour, worker consistency, network clues,
+        and server-side signals.</p>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="scanner-shell">
+        <div class="scanner-head">
+          <span class="scanner-dot"></span>
+          <span class="scanner-dot"></span>
+          <span class="scanner-dot"></span>
+        </div>
+        <div class="scanner-body">
+          <div id="scannerRing" class="scanner-ring scanner-pending" style="--scanner-score: 0; --scanner-angle: 0deg;">
+            <span id="scannerWebdriverDot" title="WebDriver"></span>
+            <span id="scannerWebrtcDot" title="WebRTC"></span>
+            <span id="scannerMemoryDot" title="Memory"></span>
+            <span id="scannerExtensionDot" title="Extensions"></span>
+          </div>
+          <div class="scanner-readout">
+            <span>WebDriver</span>
+            <strong id="heroWebdriver">collecting</strong>
+            <span>Verdict score</span>
+            <strong id="heroVerdict">pending</strong>
+            <span>Behaviour</span>
+            <strong id="heroBehaviour">sampling</strong>
+            <span>WebRTC</span>
+            <strong id="heroWebrtc">pending</strong>
+            <span>Memory</span>
+            <strong id="heroMemory">pending</strong>
+            <span>Extensions</span>
+            <strong id="heroExtensions">pending</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="runBtn" type="button">Run checks</button>
+      <button id="copyBtn" type="button" disabled>Copy JSON</button>
+      <button id="downloadBtn" type="button" disabled>Download JSON</button>
+      <a class="action-link" href="https://github.com/nicholasgriffintn/amiabot.app" target="_blank"
+        rel="noopener noreferrer">GitHub repo</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel summary-panel">
+      <div>
+        <h2>Verdict</h2>
+        <p id="status">Collecting browser, worker, network, and server signals…</p>
+      </div>
+      <div id="scoreCard" class="score-card pending">Pending</div>
+    </section>
+
+    <section class="panel">
+      <h2>Checks performed</h2>
+      <div class="table-wrap">
+        <table id="coverageTable">
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Result</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <details class="panel challenge-panel toggle-panel">
+      <summary>
+        <span class="summary-icon" aria-hidden="true"></span>
+        <span>Optional human check</span>
+        <small>Extra interaction evidence for the next verdict</small>
+      </summary>
+      <form id="challengeForm" class="challenge-form">
+        <div class="form-grid">
+          <label class="field">Name <input name="username" autocomplete="off" required></label>
+          <label class="field">Email <input name="email" type="email" autocomplete="off" required></label>
+        </div>
+        <fieldset class="choice-fieldset">
+          <legend>Scan depth</legend>
+          <div class="choice-grid">
+            <label class="choice"><input type="radio" name="scanDepth" value="quick" required> Quick</label>
+            <label class="choice"><input type="radio" name="scanDepth" value="standard"> Standard</label>
+            <label class="choice"><input type="radio" name="scanDepth" value="deep"> Deep</label>
+            <label class="choice"><input type="radio" name="scanDepth" value="full"> Full sweep</label>
+          </div>
+        </fieldset>
+        <div class="check-list">
+          <label class="check-field"><input type="checkbox" name="terms" required> I agree to the check</label>
+          <label class="check-field"><input type="checkbox" name="events"> Include interaction timing</label>
+          <label class="check-field"><input type="checkbox" name="fingerprints"> Include browser fingerprints</label>
+        </div>
+        <button type="submit">Submit challenge</button>
+      </form>
+
+      <div id="challengeTableWrap" class="table-wrap hidden">
+        <table id="challengeTable" class="challenge-table">
+          <thead>
+            <tr>
+              <th>Probe</th>
+              <th>Target</th>
+              <th>Your value</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-target="24">
+              <td>Canvas probe</td>
+              <td><code>24</code></td>
+              <td><input inputmode="numeric" value="19"></td>
+              <td><button type="button">Verify</button></td>
+            </tr>
+            <tr data-target="58">
+              <td>WebGL probe</td>
+              <td><code>58</code></td>
+              <td><input inputmode="numeric" value="49"></td>
+              <td><button type="button">Verify</button></td>
+            </tr>
+            <tr data-target="31">
+              <td>Header probe</td>
+              <td><code>31</code></td>
+              <td><input inputmode="numeric" value="29"></td>
+              <td><button type="button">Verify</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <p id="challengeStatus" class="muted">Match each target value, then verify the row.</p>
+      </div>
+    </details>
+
+    <section class="masonry">
+      <article class="panel">
+        <h2>Top signals</h2>
+        <div id="reasons" class="list muted">No report yet.</div>
+      </article>
+      <article class="panel">
+        <h2>Runtime</h2>
+        <div id="runtime" class="kv"></div>
+      </article>
+      <article class="panel">
+        <h2>Server / IP</h2>
+        <div id="serverSummary" class="kv"></div>
+      </article>
+      <article class="panel">
+        <h2>Browser</h2>
+        <div id="browserSummary" class="kv"></div>
+      </article>
+        <article class="panel">
+        <h2>Behaviour detail</h2>
+        <div id="behaviorSummary" class="kv"></div>
+      </article>
+      <article class="panel">
+        <h2>WebRTC comparison</h2>
+        <div id="webrtcComparison" class="kv"></div>
+      </article>
+      <article class="panel">
+        <h2>Consistency</h2>
+        <h3>Request consistency</h3>
+        <div class="table-wrap">
+          <table id="requestConsistencyTable" class="compact-table">
+            <thead>
+              <tr>
+                <th>Signal</th>
+                <th>Request</th>
+                <th>Browser</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <h3>Worker consistency</h3>
+        <div class="table-wrap">
+          <table id="workerConsistencyTable" class="compact-table">
+            <thead>
+              <tr>
+                <th>Signal</th>
+                <th>Window</th>
+                <th>Web Worker</th>
+                <th>Iframe</th>
+                <th>Service Worker</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+        <article class="panel">
+          <h2>Network identity</h2>
+          <div id="networkIdentity" class="kv"></div>
+          </article>
+          <article class="panel">
+            <h2>Surface indicators</h2>
+            <div id="surfaceSummary" class="kv"></div>
+          </article>
+          <article class="panel">
+            <h2>Media / DRM</h2>
+            <div id="mediaDrmSummary" class="surface-grid muted">No report yet.</div>
+          </article>
+          <article class="panel">
+            <h2>Performance memory</h2>
+            <div id="memoryVisual" class="visual-block muted">No report yet.</div>
+          </article>
+          <article class="panel">
+            <h2>Sensors</h2>
+            <div id="sensorVisual" class="visual-block muted">No report yet.</div>
+          </article>
+          <article class="panel">
+            <h2>Resource timing</h2>
+            <div id="resourceTimeline" class="visual-block muted">No report yet.</div>
+          </article>
+          <article class="panel">
+            <h2>Browser extensions</h2>
+            <div id="extensionProbeSummary" class="visual-block muted">No report yet.</div>
+          </article>
+          <article class="panel">
+            <h2>Voices & policies</h2>
+            <div id="voicePolicySummary" class="visual-block muted">No report yet.</div>
+      </article>
+    </section>
+
+    <details class="panel raw-panel toggle-panel">
+      <summary>
+        <span class="summary-icon" aria-hidden="true"></span>
+        <span>Raw report</span>
+        <small>JSON details for export and debugging</small>
+      </summary>
+      <pre id="jsonOut">No report yet.</pre>
+    </details>
+  </main>
+
+  <script src="/app.js" type="module"></script>
+</body>
+
+</html>
