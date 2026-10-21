@@ -10,6 +10,11 @@
   (how to drive the page with Playwright or Puppeteer, the API routes
   /api/ping, /api/check and POST /api/report, how the verdict is scored,
   and how to interpret a run.)
+- What each check means: https://tells.blowhorn.ai/checks/
+  (one page per check: what it reads, how its result is decided, why it
+  matters, and where it matters most.)
+- Which platforms care about which tells:
+  https://tells.blowhorn.ai/checks/platforms/
 - The tool: https://tells.blowhorn.ai/
 - Source: https://github.com/layer5io/blowhorn-tells
 

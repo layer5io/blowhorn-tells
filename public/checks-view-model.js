@@ -13,6 +13,7 @@ export const CHECK_STATUS = {
 const CHECKS = [
   {
     name: "Request profile",
+    slug: "request-profile",
     reasons: ["server_missing_ua", "missing_user_agent", "automation_user_agent", "library_user_agent", "missing_accept", "missing_accept_language", "missing_client_hints", "body_without_content_type", "request_client_ua_mismatch", "accept_language_mismatch", "client_hint_platform_mismatch", "client_hint_mobile_mismatch", "client_hint_high_entropy_mismatch", "ua_data_high_entropy_mismatch", "ua_platform_mismatch", "timezone_mismatch"],
     observe: ({ server }) => join([
       describeUserAgent(server.userAgent),
@@ -22,6 +23,7 @@ const CHECKS = [
   },
   {
     name: "Proxy indicators",
+    slug: "proxy-indicators",
     reasons: ["proxy_headers"],
     // The server already separates Cloudflare's own forwarding headers from extra ones;
     // only the extra ones land in the proxy_headers reason.
@@ -33,6 +35,7 @@ const CHECKS = [
   },
   {
     name: "Datacenter pattern",
+    slug: "datacenter-pattern",
     reasons: ["datacenter_asn_heuristic"],
     available: ({ server }) => Boolean(server.datacenterHeuristic?.organization || server.cf?.asOrganization),
     unavailable: () => "no network owner reported",
@@ -45,6 +48,7 @@ const CHECKS = [
   },
   {
     name: "VPN / proxy / Tor intelligence",
+    slug: "vpn-proxy-tor",
     reasons: ["ip_vpn", "ip_proxy", "ip_tor", "ip_datacenter", "ip_crawler", "ip_abuser", "ipqs_high_fraud_score"],
     available: ({ server }) => server.ipIntel?.enabled === true && !server.ipIntel?.error,
     unavailable: ({ server }) => server.ipIntel?.error ? "lookup failed" : "lookup off",
@@ -58,6 +62,7 @@ const CHECKS = [
   },
   {
     name: "Managed bot score",
+    slug: "managed-bot-score",
     reasons: ["managed_bot_score_low", "managed_bot_score_borderline", "cloudflare_verified_bot"],
     available: ({ server }) => server.cloudflareBotManagement?.available === true,
     unavailable: () => "not on this plan",
@@ -68,6 +73,7 @@ const CHECKS = [
   },
   {
     name: "TLS fingerprint",
+    slug: "tls-fingerprint",
     reasons: [],
     available: ({ server }) => Boolean(server.cf?.tlsVersion),
     unavailable: () => "no TLS details",
@@ -79,6 +85,7 @@ const CHECKS = [
   },
   {
     name: "Browser data",
+    slug: "browser-data",
     reasons: ["navigator_webdriver", "client_headless_user_agent", "empty_plugins_chromium", "plugin_reference_mismatch", "plugin_item_overflow", "prototype_getter_not_native", "screen_viewport_impossible", "mobile_touch_mismatch", "notification_permission_default_state", "notification_permission_contradiction"],
     available: ({ client }) => Boolean(client?.browser),
     observe: ({ client }) => {
@@ -94,6 +101,7 @@ const CHECKS = [
   },
   {
     name: "Browser fingerprint",
+    slug: "browser-fingerprint",
     reasons: ["webgl_missing", "canvas_error"],
     available: ({ client }) => Boolean(client?.fingerprints),
     observe: ({ client }) => {
@@ -108,6 +116,7 @@ const CHECKS = [
   },
   {
     name: "Fingerprint surfaces",
+    slug: "fingerprint-surfaces",
     reasons: [],
     available: ({ client }) => Boolean(client?.surfaces),
     observe: ({ client }) => {
@@ -122,6 +131,7 @@ const CHECKS = [
   },
   {
     name: "Performance memory pings",
+    slug: "performance-memory",
     reasons: ["performance_memory_anomaly"],
     available: ({ client }) => (client?.network?.ping?.memorySamples || []).some((sample) => sample?.supported),
     unavailable: () => "not exposed by this browser",
@@ -133,6 +143,7 @@ const CHECKS = [
   },
   {
     name: "Worker consistency",
+    slug: "worker-consistency",
     reasons: ["worker_platform_mismatch", "iframe_platform_mismatch"],
     // Disagreement the score does not penalize still deserves a warning on this row.
     extraStatus: ({ client }) => {
@@ -149,6 +160,7 @@ const CHECKS = [
   },
   {
     name: "WebRTC network clues",
+    slug: "webrtc-clues",
     reasons: ["webrtc_public_ip_mismatch"],
     available: ({ client }) => client?.network?.webrtc?.supported !== false && (client?.network?.webrtc?.candidates || []).length > 0,
     unavailable: ({ client }) => client?.network?.webrtc?.supported === false ? "not supported" : "no candidates (blocked or offline)",
@@ -156,6 +168,7 @@ const CHECKS = [
   },
   {
     name: "Latency",
+    slug: "latency",
     reasons: ["browser_edge_latency_gap"],
     observe: ({ server, client }) => join([
       Number.isFinite(client?.network?.ping?.medianMs) ? `browser ${Math.round(client.network.ping.medianMs)} ms` : null,
@@ -165,6 +178,7 @@ const CHECKS = [
   },
   {
     name: "Remote-control tells",
+    slug: "remote-control-tells",
     reasons: ["automation_globals", "document_automation_keys", "cdp_serialization_signal", "webdriver_own_property", "webdriver_getter_patched", "native_function_patched", "synthetic_input", "input_while_hidden", "input_without_focus", "zero_size_window"],
     available: ({ client }) => Boolean(client?.automation || client?.tells),
     observe: ({ client }) => {
@@ -179,6 +193,7 @@ const CHECKS = [
   },
   {
     name: "Behavioural classification",
+    slug: "behavioural-classification",
     reasons: ["behavior_score_low", "behavior_score_borderline"],
     available: ({ client }) => Boolean(client?.behavior),
     observe: ({ client }) => {
@@ -190,6 +205,7 @@ const CHECKS = [
   },
   {
     name: "Optional human check",
+    slug: "human-check",
     reasons: [],
     available: ({ client }) => client?.challenge?.completed === true,
     unavailable: () => "not taken",
@@ -226,7 +242,8 @@ export function buildCheckRows(report) {
 }
 
 function row(name, status, result, finding) {
-  return { name, status, ...CHECK_STATUS[status], result, finding };
+  const check = CHECKS.find((entry) => entry.name === name);
+  return { name, status, ...CHECK_STATUS[status], result, finding, slug: check?.slug || null };
 }
 
 function safeObserve(check, context, matched) {

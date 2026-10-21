@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Every check Blowhorn Tells runs, explained: what it reads, how Pass, Warning and Fail are decided, and why websites care.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>What each check means: the Tells check guide | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the content</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow">Blowhorn Tells</p>
+    <h1>What each check means</h1>
+    <p class="lede">The tool runs sixteen checks. Each one has a page here: what it is, what
+      Tells reads to run it, how its result is decided, and why a website cares. Read the one
+      your report flagged, or start with the group that sounds like your problem.</p>
+    <section class="panel">
+      <h2>How a result is decided</h2>
+      <p>Every check ends in one of four states. <strong>Pass</strong>: the readings were
+        collected and nothing in them matched a known tell. <strong>Warning</strong>: a
+        medium or low severity finding matched. <strong>Fail</strong>: a high severity
+        finding matched, the kind a real gate would act on. <strong>Not available</strong>:
+        the readings never arrived (the browser does not expose them, this site's plan does
+        not include them, or a drill was not taken). Not available is a statement about
+        coverage, never a failure.</p>
+      <p>Findings also carry points. The verdict starts at 100 and each finding subtracts
+        its weight, so one page's Fail on a heavyweight check can cost more than three
+        Warnings elsewhere. Each check page below lists the findings that move its row.</p>
+    </section>
+    <section class="panel">
+      <h2>On the wire</h2>
+      <ul>
+          <li><a href="/checks/request-profile/"><strong>Request profile</strong></a>: Does the request introduce itself the way a real browser does?</li>
+          <li><a href="/checks/proxy-indicators/"><strong>Proxy indicators</strong></a>: Did the request pass through a proxy that announced itself?</li>
+          <li><a href="/checks/datacenter-pattern/"><strong>Datacenter pattern</strong></a>: Does the network this IP belongs to look like a hosting provider?</li>
+          <li><a href="/checks/vpn-proxy-tor/"><strong>VPN / proxy / Tor intelligence</strong></a>: What does IP reputation data say about this address?</li>
+          <li><a href="/checks/managed-bot-score/"><strong>Managed bot score</strong></a>: Cloudflare's own bot score for this exact request.</li>
+          <li><a href="/checks/tls-fingerprint/"><strong>TLS fingerprint</strong></a>: The fingerprint of the encrypted connection itself.</li>
+          <li><a href="/checks/latency/"><strong>Latency</strong></a>: Two clocks that should roughly agree.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>In the browser</h2>
+      <ul>
+          <li><a href="/checks/browser-data/"><strong>Browser data</strong></a>: The browser's own description of itself, checked for tool marks.</li>
+          <li><a href="/checks/browser-fingerprint/"><strong>Browser fingerprint</strong></a>: Canvas, graphics and fonts: the near-unique sketch of this browser.</li>
+          <li><a href="/checks/fingerprint-surfaces/"><strong>Fingerprint surfaces</strong></a>: The long tail: extensions, voices, media, sensors, policies.</li>
+          <li><a href="/checks/performance-memory/"><strong>Performance memory pings</strong></a>: Memory numbers that have to obey physics.</li>
+          <li><a href="/checks/worker-consistency/"><strong>Worker consistency</strong></a>: Ask the same question in four rooms of the browser. Do the answers match?</li>
+          <li><a href="/checks/webrtc-clues/"><strong>WebRTC network clues</strong></a>: The addresses your browser volunteers for voice and video.</li>
+          <li><a href="/checks/remote-control-tells/"><strong>Remote-control tells</strong></a>: Direct evidence that something else is holding the wheel.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Behaviour</h2>
+      <ul>
+          <li><a href="/checks/behavioural-classification/"><strong>Behavioural classification</strong></a>: How the pointer, keys and scroll actually moved.</li>
+          <li><a href="/checks/human-check/"><strong>Optional human check</strong></a>: A small drill that adds interaction evidence. Nothing real is asked.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Which checks does a platform care about?</h2>
+      <p>Not every site weighs these equally. The <a href="/checks/platforms/">platform
+        guide</a> ranks the platforms Blowhorn works with by how hard their defences lean on
+        each family of tells, and explains why an IP finding can end the conversation on one
+        platform while behaviour decides it on another.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/checks/">What each check means</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
