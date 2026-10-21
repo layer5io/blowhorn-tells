@@ -1,9 +1,7 @@
-export async function fetchWithTimeout(url, options, timeoutMs) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("timeout"), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
+// AbortSignal.timeout keeps the deadline in force while the caller reads the body,
+// so a provider that sends headers and then stalls cannot hang the request.
+export function fetchWithTimeout(url, options = {}, timeoutMs) {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+  return fetch(url, { ...options, signal });
 }

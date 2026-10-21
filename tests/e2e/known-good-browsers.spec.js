@@ -17,7 +17,7 @@ test.describe("known-good browser detection", () => {
       });
       expect(body.verdict.score).toBeGreaterThanOrEqual(90);
       expect(body.verdict.reasons.filter((reason) => reason.severity !== "low")).toEqual([]);
-      expect(reasonIds(body)).not.toEqual(expect.arrayContaining(disallowedKnownGoodReasonIds));
+      expect(reasonIds(body).filter((id) => disallowedKnownGoodReasonIds.includes(id))).toEqual([]);
       expect(body.client.browser.webdriver).toBe(false);
       expect(body.client.automation.present).toEqual([]);
     });

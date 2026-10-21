@@ -24,6 +24,8 @@ jobs:
         run: echo "::notice::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not set on this repository, so nothing was deployed."
       - uses: actions/checkout@v4
         if: env.HAS_CLOUDFLARE == 'true'
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         if: env.HAS_CLOUDFLARE == 'true'
         with:

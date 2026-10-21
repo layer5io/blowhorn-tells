@@ -56,6 +56,8 @@ Service Worker checks need a secure context; `localhost` counts as one in curren
 
 `master` deploys through `.github/workflows/deploy.yml` when the repository has `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. Without them the workflow says so and deploys nothing. The Worker serves the `tells.blowhorn.ai` custom domain (`wrangler.json`).
 
+On Cloudflare the client address always comes from `cf-connecting-ip`. Behind another proxy, set `TRUST_FORWARDED_CLIENT_IP_HEADERS=true` and `TRUSTED_PROXY_HOPS` to the number of proxies you run (default 1). The Worker then reads `X-Forwarded-For` from the right, so a client cannot choose its own rate-limit key.
+
 ## IP intelligence providers
 
 The default provider is `ipapi.is`, called from the Worker. Anonymous use covers light traffic; for more, set a Worker secret:

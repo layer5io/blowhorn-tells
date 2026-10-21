@@ -43,10 +43,7 @@ export function reportCorsHeaders(request) {
 }
 
 export async function readJsonBody(request, maxBytes) {
-  const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > maxBytes) {
-    throw new HttpError(413, `Request body too large. Max ${maxBytes} bytes.`);
-  }
+  const text = await readBodyText(request, maxBytes);
   if (!text.trim()) return null;
   try {
     return JSON.parse(text);
@@ -60,4 +57,34 @@ export function json(value, status = 200, headers = {}, baseHeaders = JSON_HEADE
     status,
     headers: { ...baseHeaders, ...headers }
   });
+}
+
+// Refuse oversized bodies before buffering them: trust a declared Content-Length,
+// and otherwise stop reading the stream as soon as it passes the limit.
+async function readBodyText(request, maxBytes) {
+  const tooLarge = () => new HttpError(413, `Request body too large. Max ${maxBytes} bytes.`);
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) throw tooLarge();
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw tooLarge();
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
 }

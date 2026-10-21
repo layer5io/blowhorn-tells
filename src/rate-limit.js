@@ -1,4 +1,4 @@
-import { getClientIp, shouldTrustForwardedClientIp } from "./client-ip.js";
+import { clientIpOptions, getClientIp } from "./client-ip.js";
 
 const API_RATE_LIMITER_BINDING = "API_RATE_LIMITER";
 const UNKNOWN_API_ROUTE = "/api/*";
@@ -35,8 +35,6 @@ export async function checkApiRateLimit(request, env) {
 export function buildApiRateLimitKey(request, env = {}) {
   const url = new URL(request.url);
   const route = API_ROUTES.has(url.pathname) ? url.pathname : UNKNOWN_API_ROUTE;
-  const client = getClientIp(request.headers, {
-    trustForwardedHeaders: shouldTrustForwardedClientIp(env)
-  }) || "unknown-client";
+  const client = getClientIp(request.headers, clientIpOptions(env)) || "unknown-client";
   return `${request.method}:${route}:${client}`;
 }

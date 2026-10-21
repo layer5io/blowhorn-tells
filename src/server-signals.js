@@ -1,4 +1,4 @@
-import { getClientIp, shouldTrustForwardedClientIp } from "./client-ip.js";
+import { clientIpOptions, getClientIp } from "./client-ip.js";
 import { lookupIpIntel } from "./ip-intelligence.js";
 import { isJsonSafeValue } from "./json-safe.js";
 import { collectProxyHeaders } from "./proxy-headers.js";
@@ -7,36 +7,34 @@ import { SENSITIVE_HEADERS } from "./sensitive-headers.js";
 import { redactUrlSecrets } from "./url-redaction.js";
 
 const DATACENTER_ORG_PATTERNS = [
-  /amazon|aws|ec2/i,
-  /google\s+cloud|google\s+llc|google\s+inc/i,
-  /microsoft|azure/i,
-  /digitalocean/i,
-  /linode|akamai cloud|akamai connected cloud/i,
-  /vultr|choopa/i,
-  /ovh|soyoustart|kimsufi/i,
-  /hetzner/i,
-  /leaseweb/i,
-  /contabo/i,
-  /oracle|oci/i,
-  /alibaba|aliyun/i,
-  /tencent/i,
-  /huawei cloud/i,
-  /scaleway/i,
-  /packet|equinix metal/i,
-  /cloudflare/i,
-  /m247/i,
-  /data center|datacenter|hosting|colo/i,
-  /servers|servermania|rackspace|ionos|1&1/i,
-  /quadranet|psychz|sharktech|reliablesite/i,
-  /cogent|g-core|fastly/i
+  /\b(?:amazon|aws|ec2)\b/i,
+  /\b(?:google\s+cloud|google\s+llc|google\s+inc)\b/i,
+  /\b(?:microsoft|azure)\b/i,
+  /\b(?:digitalocean)\b/i,
+  /\b(?:linode|akamai cloud|akamai connected cloud)\b/i,
+  /\b(?:vultr|choopa)\b/i,
+  /\b(?:ovh|soyoustart|kimsufi)\b/i,
+  /\b(?:hetzner)\b/i,
+  /\b(?:leaseweb)\b/i,
+  /\b(?:contabo)\b/i,
+  /\b(?:oracle|oci)\b/i,
+  /\b(?:alibaba|aliyun)\b/i,
+  /\b(?:tencent)\b/i,
+  /\b(?:huawei cloud)\b/i,
+  /\b(?:scaleway)\b/i,
+  /\b(?:packet|equinix metal)\b/i,
+  /\b(?:cloudflare)\b/i,
+  /\b(?:m247)\b/i,
+  /\b(?:data center|datacenter|hosting|colo|colocation)\b/i,
+  /\b(?:servers|servermania|rackspace|ionos|1&1)\b/i,
+  /\b(?:quadranet|psychz|sharktech|reliablesite)\b/i,
+  /\b(?:cogent|g-core|fastly)\b/i
 ];
 
 export function collectServerBasics(request, env = {}) {
   const headers = collectHeaders(request.headers);
   const cf = collectCf(request.cf || {});
-  const ip = getClientIp(request.headers, {
-    trustForwardedHeaders: shouldTrustForwardedClientIp(env)
-  });
+  const ip = getClientIp(request.headers, clientIpOptions(env));
   const ua = request.headers.get("user-agent") || "";
   const proxyHeaders = collectProxyHeaders(request.headers, SENSITIVE_HEADERS);
   const url = new URL(request.url);
@@ -160,7 +158,7 @@ function analyzeHeaders(headers, ua) {
   return { reasons };
 }
 
-function inferDatacenterFromOrg(org) {
+export function inferDatacenterFromOrg(org) {
   const matched = DATACENTER_ORG_PATTERNS.find((pattern) => pattern.test(org));
   return {
     isLikelyDatacenter: Boolean(matched),
