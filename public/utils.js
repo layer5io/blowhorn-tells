@@ -181,6 +181,24 @@ export function copyPlain(value) {
   return JSON.parse(JSON.stringify(value, (_, v) => typeof v === "bigint" ? v.toString() : v));
 }
 
+// WebIDL objects such as GPUAdapterInfo keep their values in prototype getters,
+// which JSON.stringify skips. for...in walks those inherited attributes.
+export function copyWebIdl(value) {
+  if (!value || typeof value !== "object") return value ?? null;
+  const out = {};
+  for (const key in value) {
+    let field;
+    try {
+      field = value[key];
+    } catch (_) {
+      continue;
+    }
+    if (typeof field === "bigint") out[key] = field.toString();
+    else if (field === null || ["string", "number", "boolean"].includes(typeof field)) out[key] = field;
+  }
+  return out;
+}
+
 export function bool(value) {
   return value === true ? "true" : value === false ? "false" : value == null ? "n/a" : String(value);
 }

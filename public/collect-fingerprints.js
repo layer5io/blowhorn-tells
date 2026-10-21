@@ -1,4 +1,4 @@
-import { copyPlain, promiseWithTimeout, safeAsync, sha256 } from "./utils.js";
+import { copyPlain, copyWebIdl, promiseWithTimeout, safeAsync, sha256 } from "./utils.js";
 
 export async function collectFingerprints() {
   const [canvas, webgl, audio, fonts, cssMedia, webgpu] = await Promise.all([
@@ -175,12 +175,12 @@ async function collectWebGpuFingerprint() {
   try {
     const adapter = await promiseWithTimeout(navigator.gpu.requestAdapter(), 1500, "WebGPU adapter timeout");
     if (!adapter) return { supported: true, adapter: null };
-    const info = adapter.info ? copyPlain(adapter.info) : adapter.requestAdapterInfo ? await safeAsync(() => adapter.requestAdapterInfo()) : null;
+    const info = adapter.info || (adapter.requestAdapterInfo ? await safeAsync(() => adapter.requestAdapterInfo()) : null);
     return {
       supported: true,
-      adapterInfo: copyPlain(info),
+      adapterInfo: copyWebIdl(info),
       features: adapter.features ? Array.from(adapter.features) : [],
-      limits: adapter.limits ? copyPlain(adapter.limits) : null
+      limits: copyWebIdl(adapter.limits)
     };
   } catch (error) {
     return { supported: true, error: String(error && error.message ? error.message : error) };

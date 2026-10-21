@@ -231,7 +231,12 @@ function updateScannerState(values) {
   setScannerDot("#scannerWebdriverDot", values.webdriver === "yes" ? "bad" : values.webdriver === "no" ? "good" : "muted");
   setScannerDot("#scannerWebrtcDot", values.webrtc === "mismatch" ? "bad" : values.webrtc === "matched" ? "good" : values.webrtc === "extra" ? "warn" : "muted");
   setScannerDot("#scannerMemoryDot", values.memory && values.memory !== "n/a" && values.memory !== "pending" ? "good" : "muted");
-  setScannerDot("#scannerExtensionDot", values.extensions && values.extensions !== "n/a" && values.extensions !== "pending" && !String(values.extensions).startsWith("0/") ? "warn" : "good");
+  setScannerDot("#scannerExtensionDot", extensionDotTone(values.extensions));
+}
+
+export function extensionDotTone(extensions) {
+  if (!extensions || extensions === "n/a" || extensions === "pending") return "muted";
+  return String(extensions).startsWith("0/") ? "good" : "warn";
 }
 
 function setScannerDot(selector, tone) {

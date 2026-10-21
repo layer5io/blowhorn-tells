@@ -221,13 +221,10 @@ function probeExtensionResource(probe) {
       return;
     }
 
-    element = document.createElement("iframe");
-    element.setAttribute("aria-hidden", "true");
-    element.style.cssText = "position:absolute;width:1px;height:1px;left:-9999px;top:-9999px;border:0";
-    element.onload = () => finish(true);
-    element.onerror = () => finish(false);
-    element.src = probe.url;
-    document.body.appendChild(element);
+    // An iframe fires load even for a blocked chrome-extension:// page, so only a
+    // successful fetch of a web-accessible resource counts as found.
+    fetch(probe.url, { signal: AbortSignal.timeout(900) })
+      .then((response) => finish(response.ok), () => finish(false));
   });
 }
 

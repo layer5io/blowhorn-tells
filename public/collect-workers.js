@@ -44,17 +44,17 @@ async function collectWebWorker() {
     collect();
   `;
   const url = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+  let worker = null;
   try {
-    const worker = new Worker(url);
-    const data = await promiseWithTimeout(new Promise((resolve, reject) => {
+    worker = new Worker(url);
+    return await promiseWithTimeout(new Promise((resolve, reject) => {
       worker.onmessage = (event) => resolve(event.data);
       worker.onerror = (event) => reject(new Error(event.message || "Web Worker error"));
     }), 1800, "Web Worker timeout");
-    worker.terminate();
-    return data;
   } catch (error) {
     return { supported: true, error: String(error && error.message ? error.message : error) };
   } finally {
+    worker?.terminate();
     URL.revokeObjectURL(url);
   }
 }
@@ -92,8 +92,12 @@ async function collectServiceWorker() {
     return { supported: false, reason: "Service Worker requires secure context and navigator.serviceWorker." };
   }
   try {
-    const registration = await navigator.serviceWorker.register("/sw-detector.js", { scope: "/" });
-    await navigator.serviceWorker.ready;
+    const registration = await promiseWithTimeout(
+      navigator.serviceWorker.register("/sw-detector.js", { scope: "/" }),
+      2500,
+      "Service Worker registration timeout"
+    );
+    await promiseWithTimeout(navigator.serviceWorker.ready, 2500, "Service Worker activation timeout");
     const sw = registration.active || registration.waiting || registration.installing || navigator.serviceWorker.controller;
     if (!sw) return { supported: true, error: "No active service worker after registration." };
 
