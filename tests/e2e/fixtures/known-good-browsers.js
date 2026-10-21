@@ -142,7 +142,16 @@ export const disallowedKnownGoodReasonIds = [
   "prototype_getter_not_native",
   "screen_viewport_impossible",
   "ua_platform_mismatch",
-  "worker_platform_mismatch"
+  "worker_platform_mismatch",
+  "webdriver_own_property",
+  "webdriver_getter_patched",
+  "native_function_patched",
+  "document_automation_keys",
+  "synthetic_input",
+  "input_while_hidden",
+  "input_without_focus",
+  "notification_permission_contradiction",
+  "zero_size_window"
 ];
 
 export const automationControlReport = {
@@ -163,6 +172,13 @@ export const automationControlReport = {
       present: ["__webdriver_script_fn"],
       webdriver: true,
       cdpSerializationSignal: true
+    },
+    tells: {
+      webdriver: { definedOn: "navigator", getterNative: false },
+      nativeFunctions: { functionToString: true, permissionsQuery: false },
+      documentAutomationKeys: ["$cdc_asdjflasutopfhvcZLmcfl_"],
+      chromeMajor: 126,
+      input: { count: 4, untrusted: 2, trustedWhileHidden: 2, trustedWithoutFocus: 2 }
     },
     behavior: {
       score: 0.03,
@@ -227,6 +243,13 @@ function buildBrowserReport({ name, headers, browser, worker }) {
         webdriver: false,
         cdpSerializationSignal: false
       },
+      tells: {
+        webdriver: { definedOn: "Navigator.prototype", getterNative: true },
+        nativeFunctions: { functionToString: true, permissionsQuery: true },
+        documentAutomationKeys: [],
+        chromeMajor: null,
+        input: { count: 6, untrusted: 0, trustedWhileHidden: 0, trustedWithoutFocus: 0 }
+      },
       workers: {
         webWorker: workerProfile,
         iframe: workerProfile,
@@ -289,6 +312,8 @@ function desktopScreen(width, height) {
     availHeight: height - 40,
     innerWidth: width - 160,
     innerHeight: height - 180,
+    outerWidth: width - 160,
+    outerHeight: height - 100,
     devicePixelRatio: 2
   };
 }
@@ -301,6 +326,8 @@ function mobileScreen(width, height) {
     availHeight: height,
     innerWidth: width,
     innerHeight: height - 120,
+    outerWidth: width,
+    outerHeight: height,
     devicePixelRatio: 3
   };
 }

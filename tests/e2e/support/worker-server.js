@@ -34,7 +34,7 @@ const server = createServer(async (nodeRequest, nodeResponse) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Amiabot test Worker listening on http://${host}:${port}`);
+  console.log(`Blowhorn Tells test Worker listening on http://${host}:${port}`);
 });
 
 function createWorkerEnv() {

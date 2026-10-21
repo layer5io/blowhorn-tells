@@ -50,7 +50,12 @@ test.describe("known-good browser detection", () => {
       "navigator_webdriver",
       "automation_globals",
       "cdp_serialization_signal",
-      "behavior_score_low"
+      "behavior_score_low",
+      "webdriver_own_property",
+      "native_function_patched",
+      "document_automation_keys",
+      "synthetic_input",
+      "input_while_hidden"
     ]));
   });
 });
