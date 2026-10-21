@@ -133,18 +133,10 @@ body {
     radial-gradient(55vw 45vh at 8% 85%, var(--ambient-4), transparent 70%);
 }
 
-.hero, main, .site-footer {
+.hero, main, .wrap {
   position: relative;
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
-}
-
-.topbar {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
 }
 
 .hero {
@@ -157,32 +149,134 @@ body {
 
 .hero-copy { max-width: 760px; }
 
+/* ---------- Header ----------
+   The same bar as blowhorn.ai: a sticky glass strip with the lockup on the
+   left, a short row of links back to blowhorn.ai and one teal button. Below
+   720px the links drop to their own row under the lockup. Sizes are in px so
+   the bar matches the main site exactly, whatever the page's 18px body. */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  z-index: 40;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: var(--teal);
+  color: var(--on-teal);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 -1px 0 0 var(--glass-edge), 0 1px 0 0 var(--glass-rim), 0 8px 24px -18px rgba(30, 33, 23, 0.35);
+}
+
+.header-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  min-height: 72px;
+  padding-block: 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  color: var(--text);
-  text-decoration: none;
-  font-family: var(--display);
-  font-weight: 700;
+  flex: none;
 }
 
-.brand img { display: block; height: 32px; width: auto; }
-.brand .logo-light { display: none; }
+.brand img { display: block; width: 176px; height: auto; }
+.logo-light { display: none !important; }
 @media (prefers-color-scheme: light) {
-  .brand .logo-dark { display: none; }
-  .brand .logo-light { display: block; }
+  .logo-dark { display: none !important; }
+  .logo-light { display: block !important; }
 }
 
-.brand-tag {
-  padding: 2px 10px;
-  border: 1px solid var(--line-strong);
+.product-name {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding-left: 16px;
+  border-left: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.product-name:hover { color: var(--link); }
+
+.site-nav { margin-left: auto; }
+.site-nav ul {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 12px;
   border-radius: var(--radius-pill);
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-nav a:hover { color: var(--link); background: var(--glass-sheen); }
+
+.header-bar .site-cta {
+  flex: none;
+  min-height: 40px;
+  padding: 8px 24px;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 0 rgba(0, 0, 0, 0.10), 0 8px 18px -8px rgba(0, 143, 128, 0.65);
+}
+
+@media (max-width: 720px) {
+  .header-bar { min-height: 0; padding-block: 10px 6px; gap: 6px 12px; }
+  .brand img { width: 132px; }
+  .product-name { height: 24px; padding-left: 12px; font-size: 18px; }
+  .header-bar .site-cta { margin-left: auto; padding-inline: 16px; }
+  .site-nav {
+    order: 4;
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .site-nav::-webkit-scrollbar { display: none; }
+  .site-nav a { min-height: 36px; padding: 8px; }
+  .site-nav li:first-child a { padding-left: 0; }
+}
+
+@media (max-width: 359px) {
+  .product-name { display: none; }
+}
+
+.label {
+  margin: 0 0 6px;
   color: var(--ink-muted);
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  line-height: 16px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -230,34 +324,22 @@ h3 {
   font-size: 1.08rem;
 }
 
-.major-line {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
+/* A side note for people testing scripts. A teal-tinted glass callout, the
+   same as blowhorn.ai's notices, so it never reads as a speech bubble with
+   no one speaking. */
+.dev-note {
   max-width: 64ch;
   margin: 0 0 24px;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, var(--glass-sheen), transparent 46%),
+    linear-gradient(120deg, color-mix(in srgb, var(--surface-tint) 70%, transparent), transparent 80%),
+    var(--glass-fill);
+  box-shadow: inset 0 1px 0 0 var(--glass-rim), 0 0 0 1px var(--glass-edge), var(--glass-shadow);
+  border-left: 3px solid var(--teal);
 }
-
-.bubble {
-  position: relative;
-  margin: 0;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
-  background: var(--cream);
-  box-shadow: 0 0 0 1px #C99F00;
-  color: #3C494F;
-  font-weight: 500;
-}
-
-.bubble::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 16px;
-  border-width: 8px 8px 8px 0;
-  border-style: solid;
-  border-color: transparent var(--cream) transparent transparent;
-}
+.dev-note p:last-child { margin: 0; color: var(--ink-soft); }
 
 .mascot-tile {
   overflow: hidden;
@@ -279,18 +361,161 @@ h3 {
   object-position: 46% 40%;
 }
 
+/* ---------- Footer ----------
+   The blowhorn.ai footer, trimmed for a one-page tool: a glass panel with the
+   brand and the privacy note up top, four short link columns, then a bottom
+   bar with the copyright and the status pill. */
 .site-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 32px 0 64px;
-  border-top: 1px solid var(--line);
+  position: relative;
+  padding: 24px 0 32px;
   color: var(--ink-muted);
-  font-size: 0.86rem;
+  font-size: 14px;
+  line-height: 20px;
 }
 
-.site-footer p { max-width: 64ch; margin: 0; }
+.footer-panel {
+  display: grid;
+  gap: 32px;
+  padding: 32px 24px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 46%), var(--glass-fill);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: inset 0 1px 0 0 var(--glass-rim), 0 0 0 1px var(--glass-edge), var(--glass-shadow);
+}
+
+.footer-top {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+}
+
+.footer-logo { display: inline-block; }
+.footer-logo img { display: block; width: 200px; height: auto; }
+
+.footer-tagline {
+  margin: 12px 0 8px;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: -0.005em;
+}
+
+.footer-about { max-width: 40ch; margin: 0; }
+
+.footer-title {
+  margin: 0;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.footer-privacy ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-privacy li {
+  position: relative;
+  padding-left: 20px;
+  color: var(--ink-soft);
+}
+
+.footer-privacy li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--teal);
+}
+
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 24px;
+}
+
+.footer-col ul {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-col a {
+  display: inline-block;
+  padding-block: 4px;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+.footer-col a:hover { color: var(--link); }
+
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-top: 24px;
+  padding-inline: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.status-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 1.15rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.75rem;
+  background: #484848;
+  color: #CCCCCC;
+  font-size: 0.8rem;
+  line-height: 1;
+  text-decoration: none;
+}
+.status-link:hover { color: var(--teal-bright); }
+
+.pulse-icon {
+  display: block;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: rgb(0, 211, 169);
+  box-shadow: 0 0 0 0 rgba(0, 211, 169, 0.5);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.9); }
+  70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(0, 211, 169, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(153, 237, 220, 0); }
+}
+
+@media (min-width: 720px) {
+  .footer-top { grid-template-columns: minmax(0, 1fr) minmax(0, 32rem); gap: 32px; }
+  .footer-cols { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1080px) {
+  .footer-panel { padding: 48px; }
+}
 
 :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
@@ -427,7 +652,7 @@ h3 {
 }
 
 button,
-.action-link {
+.site-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -451,24 +676,30 @@ button {
 .button-primary,
 .actions > button:first-child {
   border-color: transparent;
-  background: var(--teal);
+  background-color: var(--teal);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0) 55%);
   color: var(--on-teal);
-  box-shadow: var(--shadow-pop);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.55), var(--shadow-pop);
+}
+
+.button-secondary {
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 60%), var(--glass-fill);
+  box-shadow: inset 0 0 0 1px var(--line-strong), var(--glass-shadow);
+  border-color: transparent;
 }
 
 .button-primary:hover:not(:disabled),
 .actions > button:first-child:hover:not(:disabled) {
-  background: var(--teal-bright);
-  transform: translate(-1px, -1px);
+  background-color: var(--teal-shade);
 }
 
 button:hover:not(:disabled),
-.action-link:hover {
+.site-cta:hover {
   border-color: var(--line-strong);
 }
 
 button:focus-visible,
-.action-link:focus-visible {
+.site-cta:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -491,7 +722,7 @@ main { padding-bottom: 60px; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .panel, button, .action-link { backdrop-filter: none; background: var(--surface-raised); }
+  .panel, .site-header, .footer-panel, button:not(.button-primary) { backdrop-filter: none; background: var(--surface-raised); }
 }
 
 .summary-panel {
@@ -556,6 +787,8 @@ main { padding-bottom: 60px; }
 }
 
 .reason {
+  min-width: 0;
+  overflow-wrap: anywhere;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--panel-2);
@@ -584,7 +817,7 @@ main { padding-bottom: 60px; }
 
 .reason-evidence div {
   display: grid;
-  grid-template-columns: minmax(126px, 0.42fr) 1fr;
+  grid-template-columns: minmax(126px, 0.42fr) minmax(0, 1fr);
   gap: 8px;
   border-top: 1px solid color-mix(in srgb, var(--ink-muted) 14%, transparent);
   padding-top: 6px;
@@ -756,6 +989,7 @@ td code {
 
 .timeline-track {
   position: relative;
+  overflow: hidden;
   height: 8px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--ink-muted) 16%, transparent);
@@ -1098,7 +1332,10 @@ input[type="checkbox"] {
   }
 
 
-  .hero-visual { max-width: 520px; }
+  .hero-visual { order: 3; max-width: 520px; }
+
+  /* Keep the main button in reach on phones: right under the intro. */
+  .actions { order: 2; }
 
   .scanner-body { grid-template-columns: 130px minmax(0, 1fr); }
 
@@ -1112,7 +1349,7 @@ input[type="checkbox"] {
 @media (max-width: 640px) {
   .hero,
   main,
-  .site-footer { width: min(100vw - 24px, 1180px); }
+  .wrap { width: min(100vw - 24px, 1180px); }
 
   .verdict-figure { width: 56px; height: 56px; }
 
@@ -1135,8 +1372,8 @@ input[type="checkbox"] {
     justify-self: center;
   }
 
-  .actions button,
-  .actions .action-link { flex: 1 1 160px; }
+  .actions button { flex: 1 1 140px; }
+  .actions > button:first-child { flex-basis: 100%; }
 
   .form-grid { grid-template-columns: 1fr; }
 
