@@ -7,6 +7,7 @@ import {
   buildWebRtcComparison,
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
+import { buildCheckRows } from "./checks-view-model.js";
 import { computeBehavior } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
@@ -23,7 +24,7 @@ export function renderReport(state, report, options = {}) {
   renderVoice(voice, `Risk: ${verdict.risk || "unknown"}.`);
 
   renderReasons(verdict.reasons || []);
-  renderCoverage(report.detections || []);
+  renderChecks(report);
   renderServerSummary(report.server || {});
   renderBrowserSummary(state, report.client || {});
   renderSurfacePanels(report, renderKv);
@@ -69,13 +70,16 @@ function renderReasonEvidence(reason) {
   `;
 }
 
-function renderCoverage(rows) {
+function renderChecks(report) {
   const tbody = $("#coverageTable tbody");
-  tbody.innerHTML = rows.map((row) => `
-    <tr>
-      <td>${escapeHtml(row.name)}</td>
-      <td><span class="status-pill status-${escapeHtml(row.status)}">${escapeHtml(row.status)}</span></td>
-      <td>${escapeHtml(row.notes || "")}</td>
+  tbody.innerHTML = buildCheckRows(report).map((row) => `
+    <tr class="check-row">
+      <td class="check-status"><span class="check-icon check-${escapeHtml(row.status)}" role="img" aria-label="${escapeHtml(row.label)}" title="${escapeHtml(row.label)}">${escapeHtml(row.symbol)}</span></td>
+      <th scope="row" class="check-name">${escapeHtml(row.name)}</th>
+      <td class="check-result">
+        <span class="check-observed">${escapeHtml(row.result)}</span>
+        ${row.finding ? `<span class="check-finding check-finding-${escapeHtml(row.status)}">${escapeHtml(row.finding)}</span>` : ""}
+      </td>
     </tr>
   `).join("");
 }

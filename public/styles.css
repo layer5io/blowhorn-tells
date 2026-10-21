@@ -1386,3 +1386,109 @@ input[type="checkbox"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Checks performed: status symbol, check, and what was observed. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.check-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.check-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.check-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.check-pass { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.check-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.check-fail { color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
+.check-na { color: var(--subtle); border-style: dashed; }
+
+.checks-table { table-layout: fixed; }
+.checks-table thead th:first-child { width: 2.75rem; }
+.checks-table thead th:nth-child(2) { width: 32%; }
+
+.checks-table .check-name {
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.check-result,
+.check-name {
+  overflow-wrap: anywhere;
+}
+
+.check-observed {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: var(--ink);
+}
+
+.check-finding {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.check-finding-fail { color: var(--bad); }
+.check-finding-warn { color: var(--warn); }
+
+@media (max-width: 640px) {
+  .checks-table thead { display: none; }
+
+  .checks-table,
+  .checks-table tbody { display: block; }
+
+  .checks-table .check-row {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .checks-table .check-row:last-child { border-bottom: 0; }
+
+  .checks-table .check-row > * {
+    padding: 0;
+    border: 0;
+  }
+
+  .checks-table .check-status { grid-row: span 2; }
+  .checks-table .check-name { grid-column: 2; }
+  .checks-table .check-result { grid-column: 2; }
+}

@@ -8,7 +8,9 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [["list"]],
   use: {
-    baseURL
+    baseURL,
+    // A computer without Playwright's bundled browser can point at an installed Chrome.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {}
   },
   webServer: {
     command: "node tests/e2e/support/worker-server.js",
