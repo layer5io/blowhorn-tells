@@ -75,4 +75,4 @@ pnpm wrangler secret put IPAPI_IS_KEY
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Derived from [Am I a Bot?](https://github.com/nicholasgriffintn/amiabot.app).
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
