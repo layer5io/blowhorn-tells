@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="What the WebRTC network clues check in Blowhorn Tells reads, how its Pass, Warning and Fail results are decided, and why websites care about it.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>WebRTC network clues check: what it is and how to read it | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the content</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow"><a href="/checks/">Check guide</a> · In the browser</p>
+    <h1>WebRTC network clues</h1>
+    <p class="lede">The addresses your browser volunteers for voice and video.</p>
+
+    <section class="panel">
+      <h2>What this check is</h2>
+      <p>WebRTC, the browser's calling technology, discovers network addresses it
+          could be reached at and shares them with the page so calls can connect. Those
+          candidate addresses can include the machine's real public IP, even when the
+          browsing itself travels through a VPN or proxy. This check lists what WebRTC
+          exposes and compares it with the address the HTTP request arrived from.</p>
+    </section>
+
+    <section class="panel">
+      <h2>What Tells reads</h2>
+      <ul>
+          <li>WebRTC ICE candidates gathered in the page (via a public STUN server)</li>
+          <li>The request's public IP, for the comparison</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>How to read your result</h2>
+      <ul>
+          <li><strong>Fail:</strong> WebRTC exposed a public IP that differs from the request IP: the connection claims one address while the browser volunteers another.</li>
+          <li><strong>Pass:</strong> WebRTC's public addresses agree with the request, or it exposed only local addresses.</li>
+          <li><strong>Not available:</strong> WebRTC is unsupported, blocked, or produced no candidates. Privacy tools often disable it; that reads as Not available, not as a failure.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Why it matters</h2>
+      <p>This is the classic proxy leak, and it cuts both ways. For a person using a
+          VPN for privacy, it is a genuine exposure worth knowing about. For an automated
+          setup, it is proof the network story is staged: the proxy says one country while
+          the browser's own calling stack names another. Sites that run WebRTC probes treat
+          a mismatch as one of the strongest single signals available to them.</p>
+    </section>
+    <section class="panel">
+      <h2>Where this matters most</h2>
+      <p>On the platforms Blowhorn works with, this tell rates <strong>Low everywhere</strong>:
+        none of LinkedIn, X, Reddit, GitHub, Slack, Bluesky or Hacker News has public evidence
+        of using it as an anti-bot input. It stays in the tool because it matters on the wider
+        web (it is a standard input to commercial fingerprinting and bot-management products)
+        and because Low is a snapshot, not a law: a platform that buys such a product changes
+        this row without announcing it. The full reasoning is in the
+        <a href="/checks/platforms/">platform guide</a>.</p>
+    </section>
+    <section class="panel">
+      <h2>In your report</h2>
+      <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
+        the <a href="/#panel-webrtc">WebRTC comparison</a> section. The same findings appear in the
+        report JSON under <code>verdict.reasons</code>, and the agent guide explains
+        <a href="/agents/">how to read them programmatically</a>.</p>
+      <h3>Related checks</h3>
+      <ul>
+          <li><a href="/checks/vpn-proxy-tor/">VPN / proxy / Tor intelligence</a></li>
+          <li><a href="/checks/proxy-indicators/">Proxy indicators</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/checks/">What each check means</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

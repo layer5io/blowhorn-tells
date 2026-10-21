@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="What the Datacenter pattern check in Blowhorn Tells reads, how its Pass, Warning and Fail results are decided, and why websites care about it.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>Datacenter pattern check: what it is and how to read it | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the content</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow"><a href="/checks/">Check guide</a> · On the wire</p>
+    <h1>Datacenter pattern</h1>
+    <p class="lede">Does the network this IP belongs to look like a hosting provider?</p>
+
+    <section class="panel">
+      <h2>What this check is</h2>
+      <p>Every IP address belongs to a network with an owner. This check reads the
+          owner name of the network the request came from and asks a simple question: does this
+          look like a company that rents servers, or like a company that sells internet access
+          to households? People browse from the second kind. Bots are usually hosted on the
+          first.</p>
+    </section>
+
+    <section class="panel">
+      <h2>What Tells reads</h2>
+      <ul>
+          <li>The ASN organization name Cloudflare reports for the connecting IP</li>
+          <li>A name-pattern heuristic over that organization name</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>How to read your result</h2>
+      <ul>
+          <li><strong>Warning:</strong> The network owner's name resembles a hosting or datacenter provider.</li>
+          <li><strong>Pass:</strong> The owner reads as a consumer or business ISP.</li>
+          <li><strong>Not available:</strong> No network owner was reported for this connection.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Why it matters</h2>
+      <p>It is the cheapest reputation question a site can ask, and it is asked about
+          every request. A hosting-range IP does not get a session banned by itself, but it
+          starts the conversation in debt: everything else the browser does is read in that
+          light. It is also the finding most often responsible when a technically clean
+          browser still scores badly from a VPS or a corporate egress range.</p>
+    </section>
+    <section class="panel">
+      <h2>Where this matters most</h2>
+      <p>Across the platforms Blowhorn works with, rated in the
+        <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
+        L = no public evidence; tags mark vendor-stated, reported, or inferred evidence):</p>
+      <ul>
+          <li><strong>LinkedIn (M):</strong> datacenter egress is a classic checkpoint trigger for a fraud-sensitive login <span class="muted">[Reported]</span></li>
+          <li><strong>X (H):</strong> datacenter IPs are flagged far more aggressively than residential ones <span class="muted">[Reported]</span></li>
+          <li><strong>Reddit (H):</strong> server IPs get much stricter limits and scrutiny <span class="muted">[Reported]</span></li>
+          <li><strong>Hacker News (M):</strong> datacenter-origin accounts attract the spam filter <span class="muted">[Inference]</span></li>
+      </ul>
+      <p>Everywhere else in the set this one rates Low.</p>
+    </section>
+    <section class="panel">
+      <h2>In your report</h2>
+      <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
+        the <a href="/#panel-network">Network identity</a> section. The same findings appear in the
+        report JSON under <code>verdict.reasons</code>, and the agent guide explains
+        <a href="/agents/">how to read them programmatically</a>.</p>
+      <h3>Related checks</h3>
+      <ul>
+          <li><a href="/checks/vpn-proxy-tor/">VPN / proxy / Tor intelligence</a></li>
+          <li><a href="/checks/proxy-indicators/">Proxy indicators</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/checks/">What each check means</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

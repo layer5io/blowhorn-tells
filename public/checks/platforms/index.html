@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LinkedIn, X, Reddit, GitHub, Slack, Bluesky and Hacker News ranked by bot-detection sensitivity, with each Tells check mapped to the platforms where it matters and the evidence labelled.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>Which platforms care about which tells: the platform guide | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the content</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow"><a href="/checks/">Check guide</a> · Platforms</p>
+    <h1>Which platforms care about which tells</h1>
+    <p class="lede">Blowhorn works on seven platforms. Their defences are not the same shape:
+      one reads your browser down to its fonts, another barely runs JavaScript at all. This
+      page ranks them by bot-detection sensitivity and maps each check in the guide to the
+      platforms where it plausibly matters, with the evidence labelled for what it is.</p>
+
+    <section class="panel">
+      <h2>How to read the evidence</h2>
+      <p>Claims are tagged. <strong>[Vendor]</strong>: the platform states it in its rules,
+        help pages or API terms. <strong>[Reported]</strong>: researchers or practitioners
+        documented it, in some cases disputed by the platform. <strong>[Inference]</strong>:
+        our reasoning from how the platform is built, labelled because it is not documented
+        fact. A Low rating means no public evidence a tell matters there. It never means
+        proof that nobody looks.</p>
+    </section>
+
+    <section class="panel">
+      <h2>The ranking</h2>
+      <div class="table-wrap">
+        <table class="compact-table">
+          <thead><tr><th>Rank</th><th>Platform</th></tr></thead>
+          <tbody>
+        <tr><td>1</td><td><strong>LinkedIn</strong></td></tr>
+        <tr><td>2</td><td><strong>X</strong></td></tr>
+        <tr><td>3</td><td><strong>Reddit</strong></td></tr>
+        <tr><td>4</td><td><strong>GitHub</strong></td></tr>
+        <tr><td>5</td><td><strong>Slack</strong></td></tr>
+        <tr><td>6</td><td><strong>Bluesky</strong></td></tr>
+        <tr><td>7</td><td><strong>Hacker News</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Most sensitive first. The pattern underneath the order: the higher a platform ranks,
+        the more its defences move from the account (what you do) toward the browser and the
+        connection (what you are). The bottom of the table is not defenceless; it is defended
+        at a different layer entirely.</p>
+    </section>
+    <section class="panel">
+      <h2>1. LinkedIn</h2>
+      <p>The most sensitive platform in this set, and the only one whose
+      defences reach deep into the browser. LinkedIn's rules ban automation software outright
+      and name account restriction as the consequence [Vendor]. Independent researchers
+      reported in 2026 that its pages probe for thousands of installed Chrome extensions and
+      attach an encrypted device fingerprint, built from dozens of hardware and software
+      characteristics, to session requests [Reported; LinkedIn disputes parts of that
+      characterisation]. Treat every browser-side tell as live here.</p>
+    </section>
+    <section class="panel">
+      <h2>2. X</h2>
+      <p>X permits automation through its API and forbids scripting its website,
+      with permanent suspension as the stated penalty [Vendor]. In practice its defences are
+      a spam model: IP reputation, velocity, and behaviour, with Arkose challenges at the
+      moments that matter (unlocks, sensitive actions) [Reported]. The network and behaviour
+      families decide most outcomes; deep browser fingerprinting is less documented here
+      than on LinkedIn.</p>
+    </section>
+    <section class="panel">
+      <h2>3. Reddit</h2>
+      <p>Reddit fights at the network edge. Unregistered automation meets a
+      flat "blocked by network security" wall, and the reported triggers are request-shape
+      problems: datacenter and VPN addresses, missing browser headers, inhuman timing
+      [Reported]. Accounts with history fare better than fresh ones, but the first question
+      Reddit asks is about your connection, not your browser's canvas.</p>
+    </section>
+    <section class="panel">
+      <h2>4. GitHub</h2>
+      <p>GitHub expects automation and gives it an API, published rate limits
+      (including content-creation caps that also bind the web UI), and an acceptable-use
+      ban on bulk inauthentic activity [Vendor]. Browser tells are nearly irrelevant here;
+      what gets accounts flagged is what they do in bulk, not what their browser looks
+      like. The tells that matter are the behavioural ones, read at account scale.</p>
+    </section>
+    <section class="panel">
+      <h2>5. Slack</h2>
+      <p>Slack's trust model is the workspace, the app and the token. It
+      publishes tiered rate limits and says it detects apps acting spammy and quiets them
+      [Vendor]. There is no public browser-fingerprinting surface to speak of; a session is
+      judged by its credentials and its conduct inside a workspace that admitted it.</p>
+    </section>
+    <section class="panel">
+      <h2>6. Bluesky</h2>
+      <p>An open protocol that expects bots and labels many of them good.
+      Spam is defined behaviourally in its guidelines, rate limits are published per IP
+      and per account, and enforcement runs through labelling and moderation rather than
+      device signals [Vendor]. Browser tells barely register; network citizenship and
+      behaviour carry what little weight exists.</p>
+    </section>
+    <section class="panel">
+      <h2>7. Hacker News</h2>
+      <p>The least sensitive to browser tells, for a structural reason:
+      the site is server-rendered with almost no JavaScript, so most browser tells have
+      nothing to attach to. Enforcement is real but orthogonal: IP throttling, voting-ring
+      detection and shadowbans, confirmed in on-record moderator statements [Reported].
+      The network family (which IP, how it behaves) is the whole game.</p>
+    </section>
+    <section class="panel">
+      <h2>The matrix</h2>
+      <p>Every check against every platform. Follow a check name for its full page, including
+        the per-platform reasoning.</p>
+      <div class="table-wrap">
+        <table class="compact-table matrix-table">
+          <thead><tr><th>Check</th><th>LinkedIn</th><th>X</th><th>Reddit</th><th>GitHub</th><th>Slack</th><th>Bluesky</th><th>Hacker News</th></tr></thead>
+          <tbody>
+        <tr><th scope="row"><a href="/checks/request-profile/">Request profile</a></th><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/proxy-indicators/">Proxy indicators</a></th><td><strong>M</strong></td><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td><strong>M</strong></td></tr>
+        <tr><th scope="row"><a href="/checks/datacenter-pattern/">Datacenter pattern</a></th><td><strong>M</strong></td><td><strong>H</strong></td><td><strong>H</strong></td><td>L</td><td>L</td><td>L</td><td><strong>M</strong></td></tr>
+        <tr><th scope="row"><a href="/checks/vpn-proxy-tor/">VPN / proxy / Tor intelligence</a></th><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td><strong>M</strong></td></tr>
+        <tr><th scope="row"><a href="/checks/managed-bot-score/">Managed bot score</a></th><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/tls-fingerprint/">TLS fingerprint</a></th><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/browser-data/">Browser data</a></th><td><strong>H</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/browser-fingerprint/">Browser fingerprint</a></th><td><strong>H</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/fingerprint-surfaces/">Fingerprint surfaces</a></th><td><strong>H</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/performance-memory/">Performance memory pings</a></th><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/worker-consistency/">Worker consistency</a></th><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/webrtc-clues/">WebRTC network clues</a></th><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/latency/">Latency</a></th><td>L</td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/remote-control-tells/">Remote-control tells</a></th><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td></tr>
+        <tr><th scope="row"><a href="/checks/behavioural-classification/">Behavioural classification</a></th><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td><strong>M</strong></td></tr>
+        <tr><th scope="row"><a href="/checks/human-check/">Optional human check</a></th><td><strong>H</strong></td><td><strong>H</strong></td><td><strong>M</strong></td><td><strong>M</strong></td><td>L</td><td>L</td><td>L</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two rows are Low across the board: <a href="/checks/worker-consistency/">Worker
+        consistency</a> and <a href="/checks/webrtc-clues/">WebRTC network clues</a>. That is
+        an honest gap in the public record for these seven platforms, not an oversight in
+        this table; both tells remain standard inputs to commercial bot-management products,
+        so they are the rows most likely to change silently. Researched October 2026; treat
+        the whole matrix as a dated snapshot.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/checks/">What each check means</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

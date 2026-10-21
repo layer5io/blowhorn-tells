@@ -75,7 +75,7 @@ function renderChecks(report) {
   tbody.innerHTML = buildCheckRows(report).map((row) => `
     <tr class="check-row">
       <td class="check-status"><span class="check-icon check-${escapeHtml(row.status)}" role="img" aria-label="${escapeHtml(row.label)}" title="${escapeHtml(row.label)}">${escapeHtml(row.symbol)}</span></td>
-      <th scope="row" class="check-name">${escapeHtml(row.name)}</th>
+      <th scope="row" class="check-name">${escapeHtml(row.name)}${row.slug ? `<a class="check-about" href="/checks/${escapeHtml(row.slug)}/">What this check means</a>` : ""}</th>
       <td class="check-result">
         <span class="check-observed">${escapeHtml(row.result)}</span>
         ${row.finding ? `<span class="check-finding check-finding-${escapeHtml(row.status)}">${escapeHtml(row.finding)}</span>` : ""}

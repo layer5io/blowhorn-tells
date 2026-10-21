@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="What the TLS fingerprint check in Blowhorn Tells reads, how its Pass, Warning and Fail results are decided, and why websites care about it.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>TLS fingerprint check: what it is and how to read it | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the content</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow"><a href="/checks/">Check guide</a> · On the wire</p>
+    <h1>TLS fingerprint</h1>
+    <p class="lede">The fingerprint of the encrypted connection itself.</p>
+
+    <section class="panel">
+      <h2>What this check is</h2>
+      <p>Before any HTTP is exchanged, the browser and the server negotiate an
+          encrypted connection, and the way a client opens that negotiation is characteristic
+          of the software doing it. Fingerprints of that handshake (JA3, and its successor
+          JA4) effectively name the TLS stack: this browser family, that HTTP library, some
+          other tool entirely.</p>
+    </section>
+
+    <section class="panel">
+      <h2>What Tells reads</h2>
+      <ul>
+          <li>The TLS version of the connection</li>
+          <li>The JA4 (or JA3) fingerprint Cloudflare computed for it, when the plan exposes it</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>How to read your result</h2>
+      <ul>
+          <li><strong>Pass / informational:</strong> Tells displays the fingerprint but does not score it: on its own it identifies a class of software, not a culprit.</li>
+          <li><strong>Not available:</strong> This site's plan does not expose TLS details, so the row is hidden.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Why it matters</h2>
+      <p>TLS fingerprints matter because they are so hard to argue with. A request
+          can claim any User-Agent it likes in a header, but if the handshake is the one a
+          Python HTTP library makes, the claim and the connection disagree, and sites with
+          bot management compare exactly that pair. Real browsers are consistent here
+          without trying, because the same engine makes both.</p>
+    </section>
+    <section class="panel">
+      <h2>Where this matters most</h2>
+      <p>Across the platforms Blowhorn works with, rated in the
+        <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
+        L = no public evidence; tags mark vendor-stated, reported, or inferred evidence):</p>
+      <ul>
+          <li><strong>LinkedIn (M):</strong> standard in anti-fraud stacks at this scale; not publicly documented for LinkedIn <span class="muted">[Inference]</span></li>
+          <li><strong>X (M):</strong> same reasoning; not publicly documented for X <span class="muted">[Inference]</span></li>
+          <li><strong>Reddit (M):</strong> edge blocking of non-browser clients is consistent with TLS and HTTP fingerprinting <span class="muted">[Inference]</span></li>
+      </ul>
+      <p>Everywhere else in the set this one rates Low.</p>
+    </section>
+    <section class="panel">
+      <h2>In your report</h2>
+      <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
+        the <a href="/#panel-server-ip">Server / IP</a> section. The same findings appear in the
+        report JSON under <code>verdict.reasons</code>, and the agent guide explains
+        <a href="/agents/">how to read them programmatically</a>.</p>
+      <h3>Related checks</h3>
+      <ul>
+          <li><a href="/checks/request-profile/">Request profile</a></li>
+          <li><a href="/checks/managed-bot-score/">Managed bot score</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/checks/">What each check means</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
