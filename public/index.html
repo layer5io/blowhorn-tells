@@ -5,27 +5,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description"
-    content="Am I a Bot? checks browser, network, and worker signals to help you understand whether a session looks automated.">
-  <meta name="theme-color" content="#07090f">
-  <title>Am I a Bot?</title>
+    content="Am I a Bot? A free bot detection test from Blowhorn. See the bot-detection and fingerprinting signals websites can read about your browser, explained in plain words.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>Am I a Bot? Bot detection test: what websites can see about your browser | Blowhorn Tells</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
   <div class="ambient-grid" aria-hidden="true"></div>
   <header class="hero">
-    <div class="hero-copy">
-      <a class="brand" href="/" aria-label="Am I a Bot home">
-        <span class="brand-mark" aria-hidden="true">?</span>
-        <span>Am I a Bot?</span>
+    <nav class="topbar" aria-label="Site">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="160" height="32">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="Blowhorn" width="160" height="32">
       </a>
-      <h1>Find out how automated this visit looks.</h1>
-      <p class="lede">Run a transparent detection report across browser behaviour, worker consistency, network clues,
-        and server-side signals.</p>
+      <span class="brand-tag">Tells</span>
+    </nav>
+    <div class="hero-copy">
+      <p class="eyebrow">Free bot detection test</p>
+      <h1>Am I a Bot?</h1>
+      <p class="lede">What websites can see about your browser. Every bot-detection and fingerprinting tell this page can read, in plain words.</p>
+      <div class="major-line">
+        <p class="bubble">Stand at attention. Scripts too: point your Playwright or Puppeteer run here and read the JSON.</p>
+      </div>
     </div>
-    <div class="hero-visual" aria-hidden="true">
-      <div class="scanner-shell">
+    <div class="hero-visual">
+      <figure class="mascot-tile">
+        <img src="/assets/brand/sleeper-cell-base.webp" width="960" height="540"
+          alt="Sleeper Cell, the unit's privacy scout, sweeping for bots with a radar">
+      </figure>
+      <div class="scanner-shell" aria-hidden="true">
         <div class="scanner-head">
           <span class="scanner-dot"></span>
           <span class="scanner-dot"></span>
@@ -56,21 +69,24 @@
       </div>
     </div>
     <div class="actions">
-      <button id="runBtn" type="button">Run checks</button>
+      <button id="runBtn" class="button-primary" type="button">Run the inspection</button>
       <button id="copyBtn" type="button" disabled>Copy JSON</button>
       <button id="downloadBtn" type="button" disabled>Download JSON</button>
-      <a class="action-link" href="https://github.com/nicholasgriffintn/amiabot.app" target="_blank"
-        rel="noopener noreferrer">GitHub repo</a>
+      <a class="action-link" href="https://github.com/layer5io/blowhorn-tells" target="_blank"
+        rel="noopener noreferrer">Source on GitHub</a>
     </div>
   </header>
 
   <main>
-    <section class="panel summary-panel">
+    <section class="panel summary-panel" aria-live="polite">
+      <img id="verdictFigure" class="verdict-figure" src="/assets/brand/sleeper-cell-base.webp" width="72" height="72"
+        alt="Sleeper Cell, the unit's privacy scout, sweeping for bots with a radar">
       <div>
-        <h2>Verdict</h2>
-        <p id="status">Collecting browser, worker, network, and server signals…</p>
+        <p class="eyebrow">Verdict</p>
+        <h2 id="verdictTitle">Hold still, recruit.</h2>
+        <p id="status">Inspection in progress.</p>
       </div>
-      <div id="scoreCard" class="score-card pending">Pending</div>
+      <div id="scoreCard" class="score-card pending">Inspecting</div>
     </section>
 
     <section class="panel">
@@ -92,7 +108,7 @@
     <details class="panel challenge-panel toggle-panel">
       <summary>
         <span class="summary-icon" aria-hidden="true"></span>
-        <span>Optional human check</span>
+        <span>Optional drill: prove you are human</span>
         <small>Extra interaction evidence for the next verdict</small>
       </summary>
       <form id="challengeForm" class="challenge-form">
@@ -253,6 +269,11 @@
       <pre id="jsonOut">No report yet.</pre>
     </details>
   </main>
+
+  <footer class="site-footer">
+    <p>Checks run in this browser, then the readings go to this site's server to be scored. Nothing is stored. To spot proxies and VPNs, the server looks up your IP address with ipapi.is.</p>
+    <p><a href="https://blowhorn.ai/">blowhorn.ai</a> · <a href="https://github.com/layer5io/blowhorn-tells">Source</a> · Apache-2.0</p>
+  </footer>
 
   <script src="/app.js" type="module"></script>
 </body>

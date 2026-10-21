@@ -101,7 +101,7 @@ async function collectServiceWorker() {
     const responsePromise = new Promise((resolve) => {
       channel.port1.onmessage = (event) => resolve(event.data);
     });
-    sw.postMessage({ type: "amiabot:inspect" }, [channel.port2]);
+    sw.postMessage({ type: "blowhorn-tells:inspect" }, [channel.port2]);
     return await promiseWithTimeout(responsePromise, 1800, "Service Worker timeout");
   } catch (error) {
     return { supported: true, error: String(error && error.message ? error.message : error) };

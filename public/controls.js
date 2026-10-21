@@ -5,7 +5,7 @@ export function setupButtons(state, runChecks, setStatus) {
   $("#copyBtn").addEventListener("click", async () => {
     if (!state.report) return;
     await navigator.clipboard.writeText(JSON.stringify(state.report, null, 2));
-    setStatus("JSON copied.");
+    setStatus("Report copied as JSON.");
   });
   $("#downloadBtn").addEventListener("click", () => {
     if (!state.report) return;
@@ -13,7 +13,7 @@ export function setupButtons(state, runChecks, setStatus) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `amiabot-report-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    a.download = `blowhorn-tells-report-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
     a.click();
     URL.revokeObjectURL(url);
   });

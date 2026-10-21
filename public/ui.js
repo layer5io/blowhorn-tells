@@ -10,6 +10,7 @@ import {
 import { computeBehavior } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
+import { verdictVoice } from "./voice.js";
 
 const DOT_CLASSES = ["dot-good", "dot-warn", "dot-bad", "dot-muted"];
 
@@ -17,8 +18,9 @@ export function renderReport(state, report, options = {}) {
   const verdict = report.verdict || {};
   const scoreCard = $("#scoreCard");
   scoreCard.className = `score-card ${verdict.risk || "pending"}`;
-  scoreCard.innerHTML = verdict.score == null ? "Pending" : `${escapeHtml(String(verdict.score))}<small>${escapeHtml(verdict.classification || "unknown")}</small>`;
-  setStatus(`Classification: ${verdict.classification || "unknown"}. Risk: ${verdict.risk || "unknown"}.`);
+  const voice = verdictVoice(verdict.classification);
+  scoreCard.innerHTML = verdict.score == null ? escapeHtml(voice.label) : `${escapeHtml(String(verdict.score))}<small>${escapeHtml(voice.label)}</small>`;
+  renderVoice(voice, `Risk: ${verdict.risk || "unknown"}.`);
 
   renderReasons(verdict.reasons || []);
   renderCoverage(report.detections || []);
@@ -40,7 +42,7 @@ export function renderReport(state, report, options = {}) {
 function renderReasons(reasons) {
   const el = $("#reasons");
   if (!reasons.length) {
-    el.innerHTML = `<div class="muted">No suspicious signals in current report.</div>`;
+    el.innerHTML = `<div class="muted">All quiet. No tells in this report.</div>`;
     return;
   }
   el.innerHTML = reasons.slice(0, 12).map((reason) => `
@@ -260,4 +262,15 @@ function renderKv(selector, obj) {
 
 export function setStatus(text) {
   $("#status").textContent = text;
+}
+
+export function renderVoice(voice, detail = "") {
+  const title = $("#verdictTitle");
+  const figure = $("#verdictFigure");
+  if (title) title.textContent = voice.title;
+  if (figure) {
+    figure.src = voice.figure.src;
+    figure.alt = voice.figure.alt;
+  }
+  setStatus(detail ? `${voice.line} ${detail}` : voice.line);
 }

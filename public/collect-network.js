@@ -50,7 +50,7 @@ async function collectWebRtcLeak() {
   let pc;
   try {
     pc = new RTCPeerConnection({ iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }] });
-    pc.createDataChannel("amiabot");
+    pc.createDataChannel("blowhorn-tells");
     pc.onicecandidate = (event) => {
       if (event.candidate?.candidate) candidates.push(event.candidate.candidate);
     };

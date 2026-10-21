@@ -5,13 +5,14 @@ import { collectSurfaceIndicators } from "./collect-surfaces.js";
 import { collectWorkers } from "./collect-workers.js";
 import { $ } from "./dom.js";
 import { computeBehavior } from "./runtime.js";
-import { renderReport, setStatus, updateHeroReadout } from "./ui.js";
+import { renderReport, renderVoice, setStatus, updateHeroReadout } from "./ui.js";
+import { failureVoice, verdictVoice } from "./voice.js";
 import { guessPlatformOs, guessUaOs, simplifyPerformanceEntry } from "./utils.js";
 
 export async function runChecks(state) {
   const runBtn = $("#runBtn");
   runBtn.disabled = true;
-  setStatus("Collecting signals...");
+  renderVoice(verdictVoice("pending"), "Collecting signals in this browser.");
   updateHeroReadout({ webdriver: "checking", verdict: "pending", behaviour: "sampling" });
 
   try {
@@ -38,14 +39,14 @@ export async function runChecks(state) {
       challenge: { ...state.challenge }
     };
 
-    setStatus("Sending report to Worker...");
+    setStatus("Inspection in progress. Sending the readings to the server for scoring.");
     const report = await postReport(client);
     state.report = report;
     renderReport(state, report);
     $("#copyBtn").disabled = false;
     $("#downloadBtn").disabled = false;
   } catch (error) {
-    setStatus(`Error: ${error && error.message ? error.message : error}`);
+    renderVoice(failureVoice(String(error && error.message ? error.message : error)));
     $("#jsonOut").textContent = String(error && error.stack ? error.stack : error);
   } finally {
     runBtn.disabled = false;
