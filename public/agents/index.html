@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="How AI agents and automation scripts should use Blowhorn Tells: drive the page or call the API, read the verdict, and interpret every check.">
+  <meta name="theme-color" content="#1E2117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <title>For AI agents and scripts | Blowhorn Tells</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
+</head>
+
+<body>
+  <div class="ambient-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Skip to the instructions</a>
+  <header class="site-header">
+    <div class="wrap header-bar">
+      <a class="brand" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+        <img class="logo-dark" src="/assets/brand/blowhorn-lockup-horizontal-on-dark.svg" alt="Blowhorn" width="176" height="44">
+        <img class="logo-light" src="/assets/brand/blowhorn-lockup-horizontal.svg" alt="" width="176" height="44">
+      </a>
+      <a class="product-name" href="/" aria-label="Tells, the bot detection test">Tells</a>
+      <nav class="site-nav" aria-label="Blowhorn">
+        <ul>
+          <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+          <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+          <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+          <li><a href="https://github.com/layer5io/blowhorn-tells" target="_blank" rel="noopener noreferrer">Source</a></li>
+        </ul>
+      </nav>
+      <a class="button-primary site-cta" href="https://blowhorn.ai/download/">Get Blowhorn</a>
+    </div>
+  </header>
+
+  <main id="main" class="wrap doc-page">
+    <p class="eyebrow">Blowhorn Tells</p>
+    <h1>For AI agents and scripts</h1>
+    <p class="lede">Tells is built to be run by automation. This page is the standing orders:
+      how to get a report, how to read it, and how not to misuse it. Everything here is
+      also what the human page does; there is no separate agent back door.</p>
+
+    <section class="panel">
+      <h2>Two ways to get a report</h2>
+      <h3>1. Drive the page</h3>
+      <p>Load <a href="https://tells.blowhorn.ai/">tells.blowhorn.ai</a> in the browser you are
+        evaluating. The inspection runs on load. The run is finished when the raw report JSON
+        appears in the page; read it straight out of the DOM:</p>
+      <pre><code>// Playwright / Puppeteer, same shape
+await page.goto("https://tells.blowhorn.ai/");
+await page.waitForFunction(() =&gt;
+  document.querySelector("#jsonOut")?.textContent.trim().startsWith("{"));
+const report = JSON.parse(
+  await page.$eval("#jsonOut", (el) =&gt; el.textContent));</code></pre>
+      <p>The score card (<code>#scoreCard</code>) shows the same verdict in short form.
+        The Copy JSON and Download JSON buttons hand over the identical object.</p>
+      <h3>2. Call the API</h3>
+      <div class="table-wrap">
+        <table class="compact-table">
+          <thead>
+            <tr><th>Route</th><th>What it returns</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>GET /api/ping</code></td>
+              <td>Server basics for your connection (IP view, headers, Cloudflare readings) plus the server time.</td>
+            </tr>
+            <tr>
+              <td><code>GET /api/check</code></td>
+              <td>A verdict scored from the request alone: headers, IP reputation, TLS and managed bot signals. No browser readings involved.</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/report</code></td>
+              <td>The full report. Send the client readings object as JSON (192 KB at most); the response is
+                <code>{ ok, receivedAt, verdict, server, client, detections }</code>, with the client object
+                returned enriched with cross-context consistency readings. This route answers cross-origin
+                callers with CORS headers, so a page or agent on another origin may post to it.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The surest way to learn the client payload is to run the page once and read the
+        <code>client</code> object out of its report. The collectors that build it live in the
+        <a href="https://github.com/layer5io/blowhorn-tells">open source</a> for this site.</p>
+    </section>
+
+    <section class="panel">
+      <h2>How to read the verdict</h2>
+      <ul>
+        <li><code>verdict.score</code> runs 0 to 100 and starts at 100. Every finding subtracts points.</li>
+        <li><code>verdict.classification</code> is <code>likely_human</code> (75 and up),
+          <code>suspicious</code> (45 to 74), or <code>likely_bot</code> (under 45).
+          <code>verdict.risk</code> is the same bands as low, medium, high.</li>
+        <li><code>verdict.reasons</code> is the evidence: one entry per finding, each with an
+          <code>id</code>, a <code>severity</code> of high, medium or low, a plain-words
+          <code>message</code>, and the readings it came from.</li>
+        <li>Per-check results on the human page are derived from those reasons: a check with a
+          high-severity reason reads Fail, with a medium or low reason reads Warning, with none
+          reads Pass, and a check whose readings never arrived reads Not available. Not available
+          is a statement about the browser or the plan this site runs on, not a failure.</li>
+        <li><code>detections</code> lists which detection areas ran at all. A missing row means
+          that area was not evaluated (for example the managed bot score on a plan without it),
+          which is different from evaluating clean.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>How to interpret a run</h2>
+      <ul>
+        <li><strong>A bot verdict for an automated browser is the tool working.</strong> A stock
+          Playwright, Puppeteer or headless Chrome run is supposed to score as a bot. Treat it as
+          calibration, and measure your work by which reasons fire and how the score moves when
+          your browser setup changes.</li>
+        <li><strong>Compare like with like.</strong> Score a known-good, human-driven Chrome on the
+          same machine and network as your reference, then diff the reasons, not just the score.
+          IP reputation and latency findings follow the network, not the browser.</li>
+        <li><strong>Consistency findings are the interesting ones.</strong> A spoofed value that
+          agrees everywhere is a fingerprint choice; a value that disagrees between the request,
+          the window, a worker and an iframe is a tell. The consistency sections exist to catch
+          the second kind.</li>
+        <li><strong>One run is one sample.</strong> Network intel, timing and behaviour readings
+          vary between runs. Change one thing at a time and re-run.</li>
+        <li><strong>The human check is optional and safe to take.</strong> Its form asks for an
+          invented call sign and a typed phrase, never real identity. Its result only joins the
+          report if a run completes it, and an agent that skips it loses nothing but that one
+          check's evidence.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Rules of engagement</h2>
+      <ul>
+        <li>The API allows 30 requests per minute per route, method and source IP. Over the limit
+          you get a 429 with <code>retryAfterSeconds</code> of 60. Back off; do not parallelize
+          around it.</li>
+        <li>Never put real personal data in a report payload. The tool neither needs it nor keeps
+          it: reports are scored and returned, not stored.</li>
+        <li>Findings describe this browser, this network and this moment. Do not present a report
+          as a verdict about a person, a product or another website's defences.</li>
+      </ul>
+      <p>The tool itself is at <a href="/">tells.blowhorn.ai</a>, and every check it runs is
+        listed under Checks performed there.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-panel">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
+              <img class="logo-dark" src="/assets/brand/layer5-blowhorn-lockup-on-dark.svg" alt="Layer5 Blowhorn" width="200" height="54">
+              <img class="logo-light" src="/assets/brand/layer5-blowhorn-lockup.svg" alt="" width="200" height="54">
+            </a>
+            <p class="footer-tagline">One message out, many ears in.</p>
+            <p class="footer-about">Tells is a free check from the Blowhorn team. It shows what websites can read about your browser.</p>
+          </div>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <h2 class="footer-title">Tells</h2>
+            <ul>
+              <li><a href="/#checks">Checks performed</a></li>
+              <li><a href="/agents/">For AI agents</a></li>
+              <li><a href="https://github.com/layer5io/blowhorn-tells">Source code</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h2 class="footer-title">Blowhorn</h2>
+            <ul>
+              <li><a href="https://blowhorn.ai/">What is Blowhorn</a></li>
+              <li><a href="https://blowhorn.ai/download/">Download</a></li>
+              <li><a href="https://blowhorn.ai/pricing/">Pricing</a></li>
+              <li><a href="https://blowhorn.ai/docs/">Docs</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Layer5, Inc.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
