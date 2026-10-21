@@ -29,6 +29,8 @@ jobs:
         run: pnpm check
       - name: Unit tests
         run: pnpm test
+      - name: Install Chromium for layout tests
+        run: pnpm exec playwright install --with-deps chromium
       - name: Worker end-to-end tests
         run: pnpm test:e2e
         env:

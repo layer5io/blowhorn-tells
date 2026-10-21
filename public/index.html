@@ -102,13 +102,19 @@
 
     <section class="panel" id="checks">
       <h2>Checks performed</h2>
+      <ul class="check-legend" aria-label="Status key">
+        <li><span class="check-icon check-pass" aria-hidden="true">✓</span>Pass</li>
+        <li><span class="check-icon check-warn" aria-hidden="true">!</span>Warning</li>
+        <li><span class="check-icon check-fail" aria-hidden="true">✕</span>Fail</li>
+        <li><span class="check-icon check-na" aria-hidden="true">–</span>Not available</li>
+      </ul>
       <div class="table-wrap">
-        <table id="coverageTable">
+        <table id="coverageTable" class="checks-table">
           <thead>
             <tr>
-              <th>Check</th>
-              <th>Result</th>
-              <th>Details</th>
+              <th scope="col"><span class="visually-hidden">Status</span></th>
+              <th scope="col">Check</th>
+              <th scope="col">What we saw</th>
             </tr>
           </thead>
           <tbody></tbody>
