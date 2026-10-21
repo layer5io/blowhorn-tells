@@ -13,8 +13,9 @@
     "test:all": "pnpm check && pnpm test && pnpm test:e2e"
   },
   "devDependencies": {
-    "@playwright/test": "^1.60.0",
-    "vitest": "^4.0.14",
-    "wrangler": "^4.90.0"
+    "@playwright/test": "^1.64.1",
+    "vite": "^8.3.5",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.151.3"
   }
 }
