@@ -1508,3 +1508,28 @@ input[type="checkbox"] {
   .checks-table .check-name { grid-column: 2; }
   .checks-table .check-result { grid-column: 2; }
 }
+
+/* Documentation pages (agents guide, check guide): a narrower reading column. */
+.doc-page {
+  width: min(100vw - 32px, 880px);
+  margin: 40px auto 8px;
+}
+
+.doc-page h1 {
+  margin: 6px 0 12px;
+}
+
+.doc-page .panel h2 {
+  margin-top: 0;
+}
+
+.doc-page pre {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-deep);
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}

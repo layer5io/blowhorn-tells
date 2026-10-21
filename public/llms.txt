@@ -1,0 +1,19 @@
+# Blowhorn Tells
+
+> Am I a Bot? A free bot-detection and browser fingerprint test at
+> https://tells.blowhorn.ai/ . It inspects the visiting browser, scores what
+> websites can see about it, and returns a verdict with the evidence.
+
+## For agents
+
+- Instructions for agents and scripts: https://tells.blowhorn.ai/agents/
+  (how to drive the page with Playwright or Puppeteer, the API routes
+  /api/ping, /api/check and POST /api/report, how the verdict is scored,
+  and how to interpret a run.)
+- The tool: https://tells.blowhorn.ai/
+- Source: https://github.com/layer5io/blowhorn-tells
+
+## Rules in one line
+
+30 API requests per minute per route and source IP; never send real
+personal data; a bot verdict for an automated browser is the tool working.
