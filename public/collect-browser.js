@@ -1,3 +1,4 @@
+import { matchAutomationGlobals } from "./collect-tells.js";
 import { safe, safeAsync } from "./utils.js";
 
 export async function collectBrowser() {
@@ -139,7 +140,7 @@ async function collectStorage() {
 function storageProbe(name) {
   try {
     const store = window[name];
-    const key = "__amiabot_probe__";
+    const key = "__blowhorn_tells_probe__";
     store.setItem(key, "1");
     const ok = store.getItem(key) === "1";
     store.removeItem(key);
@@ -249,8 +250,8 @@ function collectPluginConsistency() {
 
   try {
     const original = plugins.refresh;
-    plugins.refresh = "amiabot-test";
-    result.refreshWritable = plugins.refresh === "amiabot-test";
+    plugins.refresh = "blowhorn-tells-test";
+    result.refreshWritable = plugins.refresh === "blowhorn-tells-test";
     plugins.refresh = original;
   } catch (error) {
     result.refreshWritable = false;
@@ -308,7 +309,10 @@ export function collectAutomationSignals() {
     "cdc_adoQpoasnfa76pfcZLmcfl_Promise",
     "cdc_adoQpoasnfa76pfcZLmcfl_Symbol"
   ];
-  const present = markers.filter((name) => name in window);
+  const present = [...new Set([
+    ...markers.filter((name) => name in window),
+    ...matchAutomationGlobals(Object.getOwnPropertyNames(window))
+  ])];
 
   return {
     present,
@@ -321,7 +325,7 @@ export function collectAutomationSignals() {
 function detectCdpSerialization() {
   let tripped = false;
   try {
-    const error = new Error("amiabot-cdp-probe");
+    const error = new Error("blowhorn-tells-cdp-probe");
     Object.defineProperty(error, "stack", {
       configurable: true,
       get() {

@@ -2,6 +2,7 @@ import { collectAutomationSignals, collectBrowser } from "./collect-browser.js";
 import { collectFingerprints } from "./collect-fingerprints.js";
 import { collectNetwork } from "./collect-network.js";
 import { collectSurfaceIndicators } from "./collect-surfaces.js";
+import { collectTells } from "./collect-tells.js";
 import { collectWorkers } from "./collect-workers.js";
 import { $ } from "./dom.js";
 import { computeBehavior } from "./runtime.js";
@@ -30,6 +31,7 @@ export async function runChecks(state) {
       page: collectPageData(state),
       browser,
       automation,
+      tells: collectTells(state),
       workers,
       fingerprints,
       surfaces,

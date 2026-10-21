@@ -14,6 +14,7 @@ export function setupEventCapture(state) {
     if (event.type === "pointermove" && now - state.lastPointerSampleAt < 60) return;
     state.lastPointerSampleAt = now;
     record(event.type, {
+      ...inputContext(event),
       x: Math.round(event.clientX),
       y: Math.round(event.clientY),
       pointerType: event.pointerType,
@@ -25,11 +26,15 @@ export function setupEventCapture(state) {
   ["pointermove", "pointerdown", "pointerup", "click"].forEach((type) => {
     window.addEventListener(type, pointerHandler, { passive: true });
   });
-  window.addEventListener("keydown", (event) => record("keydown", { code: event.code, repeat: event.repeat }), { passive: true });
+  window.addEventListener("keydown", (event) => record("keydown", { ...inputContext(event), code: event.code, repeat: event.repeat }), { passive: true });
   window.addEventListener("scroll", () => record("scroll", { x: Math.round(window.scrollX), y: Math.round(window.scrollY) }), { passive: true });
   window.addEventListener("focus", () => record("focus"));
   window.addEventListener("blur", () => record("blur"));
   document.addEventListener("visibilitychange", () => record("visibilitychange", { visibilityState: document.visibilityState }));
+}
+
+function inputContext(event) {
+  return { isTrusted: event.isTrusted, hidden: document.hidden, hasFocus: document.hasFocus() };
 }
 
 export function setupRafProbe(state) {
