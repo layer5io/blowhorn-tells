@@ -13,6 +13,14 @@
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-2ZLYGVE3HN');
+  </script>
 </head>
 
 <body>
@@ -48,8 +56,10 @@
     </div>
     <div class="hero-visual">
       <figure class="mascot-tile">
-        <img src="/assets/brand/sleeper-cell-base.webp" width="960" height="540"
-          alt="Sleeper Cell, the unit's privacy scout, sweeping for bots with a radar">
+        <img src="/assets/brand/sleeper-cell-bot-radar.webp"
+          srcset="/assets/brand/sleeper-cell-bot-radar-640.webp 640w, /assets/brand/sleeper-cell-bot-radar.webp 1280w"
+          sizes="(max-width: 720px) 100vw, 640px" width="960" height="540"
+          alt="Sleeper Cell, the unit's privacy scout, her radar lighting up two bots">
       </figure>
       <div class="scanner-shell" aria-hidden="true">
         <div class="scanner-head">
@@ -129,9 +139,15 @@
         <small>Extra interaction evidence for the next verdict</small>
       </summary>
       <form id="challengeForm" class="challenge-form">
+        <p class="muted">This drill watches <em>how</em> a form gets filled in: typing rhythm,
+          pasting, corrections, pauses, timing. It never needs true answers, so nothing here
+          asks for anything real. Invent both answers. What you type is not sent or stored;
+          only the interaction counts and timings join the report.</p>
         <div class="form-grid">
-          <label class="field">Name <input name="username" autocomplete="off" required></label>
-          <label class="field">Email <input name="email" type="email" autocomplete="off" required></label>
+          <label class="field">Call sign <input name="callsign" autocomplete="off" required
+              placeholder="Invent one, never your real name"></label>
+          <label class="field">Type this phrase: <code>swift paper tiger</code>
+            <input name="phrase" autocomplete="off" required placeholder="Type it, or paste it"></label>
         </div>
         <fieldset class="choice-fieldset">
           <legend>Scan depth</legend>
@@ -185,33 +201,66 @@
       </div>
     </details>
 
+    <div class="panel-controls">
+      <span class="muted">Every section opens and closes.</span>
+      <button id="expandAllBtn" class="button-secondary" type="button">Expand all</button>
+      <button id="collapseAllBtn" class="button-secondary" type="button">Collapse all</button>
+    </div>
     <section class="masonry">
-      <article class="panel">
-        <h2>Top signals</h2>
+      <details class="panel toggle-panel" id="panel-top-signals" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Top signals</span>
+          <small>The findings that moved the verdict</small>
+        </summary>
         <div id="reasons" class="list muted">No report yet.</div>
-      </article>
-      <article class="panel">
-        <h2>Runtime</h2>
+      </details>
+      <details class="panel toggle-panel" id="panel-runtime" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Runtime</span>
+          <small>How this inspection ran</small>
+        </summary>
         <div id="runtime" class="kv"></div>
-      </article>
-      <article class="panel">
-        <h2>Server / IP</h2>
+      </details>
+      <details class="panel toggle-panel" id="panel-server-ip" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Server / IP</span>
+          <small>What the server saw on the wire</small>
+        </summary>
         <div id="serverSummary" class="kv"></div>
-      </article>
-      <article class="panel">
-        <h2>Browser</h2>
+      </details>
+      <details class="panel toggle-panel" id="panel-browser" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Browser</span>
+          <small>Browser and device basics</small>
+        </summary>
         <div id="browserSummary" class="kv"></div>
-      </article>
-        <article class="panel">
-        <h2>Behaviour detail</h2>
+      </details>
+        <details class="panel toggle-panel" id="panel-behaviour" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Behaviour detail</span>
+          <small>Mouse, keyboard and scroll evidence</small>
+        </summary>
         <div id="behaviorSummary" class="kv"></div>
-      </article>
-      <article class="panel">
-        <h2>WebRTC comparison</h2>
+      </details>
+      <details class="panel toggle-panel" id="panel-webrtc">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>WebRTC comparison</span>
+          <small>The addresses WebRTC exposes</small>
+        </summary>
         <div id="webrtcComparison" class="kv"></div>
-      </article>
-      <article class="panel">
-        <h2>Consistency</h2>
+      </details>
+      <details class="panel toggle-panel" id="panel-consistency">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Consistency</span>
+          <small>Whether your browser contexts agree</small>
+        </summary>
         <h3>Request consistency</h3>
         <div class="table-wrap">
           <table id="requestConsistencyTable" class="compact-table">
@@ -242,39 +291,71 @@
             <tbody></tbody>
           </table>
         </div>
-      </article>
-        <article class="panel">
-          <h2>Network identity</h2>
+      </details>
+        <details class="panel toggle-panel" id="panel-network">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Network identity</span>
+          <small>IP owner and network class</small>
+        </summary>
           <div id="networkIdentity" class="kv"></div>
-          </article>
-          <article class="panel">
-            <h2>Surface indicators</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-surfaces">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Surface indicators</span>
+          <small>APIs and settings that stand out</small>
+        </summary>
             <div id="surfaceSummary" class="kv"></div>
-          </article>
-          <article class="panel">
-            <h2>Media / DRM</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-media">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Media / DRM</span>
+          <small>Media support and DRM modules</small>
+        </summary>
             <div id="mediaDrmSummary" class="surface-grid muted">No report yet.</div>
-          </article>
-          <article class="panel">
-            <h2>Performance memory</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-memory">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Performance memory</span>
+          <small>Heap readings over the visit</small>
+        </summary>
             <div id="memoryVisual" class="visual-block muted">No report yet.</div>
-          </article>
-          <article class="panel">
-            <h2>Sensors</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-sensors">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Sensors</span>
+          <small>Motion and orientation sensors</small>
+        </summary>
             <div id="sensorVisual" class="visual-block muted">No report yet.</div>
-          </article>
-          <article class="panel">
-            <h2>Resource timing</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-resources">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Resource timing</span>
+          <small>How the page's resources loaded</small>
+        </summary>
             <div id="resourceTimeline" class="visual-block muted">No report yet.</div>
-          </article>
-          <article class="panel">
-            <h2>Browser extensions</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-extensions">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Browser extensions</span>
+          <small>Extensions this page could detect</small>
+        </summary>
             <div id="extensionProbeSummary" class="visual-block muted">No report yet.</div>
-          </article>
-          <article class="panel">
-            <h2>Voices & policies</h2>
+          </details>
+          <details class="panel toggle-panel" id="panel-voices">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Voices & policies</span>
+          <small>Speech voices and document policies</small>
+        </summary>
             <div id="voicePolicySummary" class="visual-block muted">No report yet.</div>
-      </article>
+      </details>
     </section>
 
     <details class="panel raw-panel toggle-panel">
@@ -305,6 +386,7 @@
               <li>When this page opens, it runs checks in your browser and sends the readings to this site's server, which scores them and sends the result back.</li>
               <li>This site keeps no copy and no logs.</li>
               <li>Two outside services see your IP address: the server sends it, and nothing else, to ipapi.is to spot proxies and VPNs, and the WebRTC check asks Google's public STUN server for your address.</li>
+              <li>This page carries Google Analytics, the same tag as blowhorn.ai, so Google sees the visit and this page's address. There is no consent banner; this list is the disclosure.</li>
             </ul>
           </section>
         </div>
