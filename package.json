@@ -1,0 +1,20 @@
+{
+  "name": "blowhorn-tells",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "for file in src/*.js public/*.js; do node --check \"$file\"; done",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:all": "pnpm check && pnpm test && pnpm test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "vitest": "^4.0.14",
+    "wrangler": "^4.90.0"
+  }
+}
