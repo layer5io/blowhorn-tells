@@ -7,7 +7,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", async (event) => {
-  if (!event.data || event.data.type !== "amiabot:inspect") return;
+  if (!event.data || event.data.type !== "blowhorn-tells:inspect") return;
 
   const replyPort = event.ports && event.ports[0];
   const data = {

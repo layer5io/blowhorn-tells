@@ -30,6 +30,16 @@ curl https://tells.blowhorn.ai/api/check
 
 API routes are rate limited at the Worker edge by route and client IP (30 calls a minute by default).
 
+## Privacy
+
+This is not a "nothing leaves your browser" checker. Scoring happens on the server, so the readings have to get there. This is what happens on each run:
+
+- The page runs its checks on load and posts the readings to `/api/report`. The Worker scores them and returns the report. It writes nothing to storage, and Workers observability is off in `wrangler.json`.
+- The Worker sends the visitor's IP address, and nothing else, to ipapi.is to check for datacenter, proxy, VPN and Tor addresses. `/api/check` and `/api/report` both do this; `/api/ping` does not. Set `IP_INTEL_PROVIDER=none` to turn it off.
+- The WebRTC check asks Google's public STUN server (`stun.l.google.com`) for the browser's address, as any WebRTC page can.
+
+The page footer says the same thing. If any of this changes, update the footer and this section in the same change.
+
 ## Develop
 
 Node 24 and corepack.

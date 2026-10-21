@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#07090f"/>
-  <path d="M18 19h28v20H18z" fill="#111826" stroke="#22d3ee" stroke-width="3"/>
-  <circle cx="26" cy="29" r="3" fill="#facc15"/>
-  <circle cx="38" cy="29" r="3" fill="#a3e635"/>
-  <path d="M25 43h14" stroke="#22d3ee" stroke-width="3" stroke-linecap="round"/>
-  <path d="M32 12v7" stroke="#f2f7fb" stroke-width="3" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Blowhorn favicon 32px"><title>Blowhorn favicon 32px</title><g transform="translate(13.6 12.2) rotate(-15) scale(0.205)" fill="#EE5A44"><path d="M-7.02 -2.66 L-26.50 -15.66 A3.0 3.0 0 0 0 -31.50 -12.34 L-26.98 10.66 Z M5.26 -0.33 L-15.89 -31.10 A3.3 3.3 0 0 0 -22.11 -28.90 L-19.26 8.33 Z M16.76 1.51 L-0.66 -37.65 A3.4 3.4 0 0 0 -7.34 -36.35 L-8.76 6.49 Z M26.37 2.18 L12.17 -30.47 A3.2 3.2 0 0 0 5.83 -29.53 L1.63 5.82 Z M31.00 6.00 L24.80 -16.00 A2.8 2.8 0 0 0 19.20 -16.00 L13.00 6.00 Z M-26 10 L28 10 L28 -4 Q28 -12 22 -12 L-18 -12 Q-26 -12 -26 -6 Z"/></g>
+  <rect x="2.6" y="14.4" width="5.6" height="5.4" rx="1.8" fill="#00756A"/>
+  <path d="M7.5 14.3 C14.5 13.8 19 11.5 22.2 8.4 L22.2 26.2 C19 23 14.5 20.9 7.5 20.4 Z" fill="#00B39F" stroke="#00B39F" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M15.2 21.6 C14 24.6 14.4 28.6 16.8 29 C19 29.3 20.2 26.4 19.4 23.2 Z" fill="#EE5A44"/>
+  <ellipse cx="22.8" cy="17.3" rx="3.1" ry="9.6" fill="#EBC017"/>
+  <ellipse cx="23.5" cy="17.3" rx="1.55" ry="7.5" fill="#1E2117"/>
+  <circle cx="12.4" cy="16.9" r="2.2" fill="#FFFFFF"/><circle cx="13.1" cy="17.2" r="1.15" fill="#1E2117"/>
+  <path d="M9.6 13.9 L15.4 15.2" stroke="#1E2117" stroke-width="1.5" stroke-linecap="round"/></svg>
