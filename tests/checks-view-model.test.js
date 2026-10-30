@@ -31,7 +31,7 @@ const validateRow = ajv.compile(loadSchema("check-row.schema.json"));
 const validateBotManagement = ajv.compile(loadSchema("cloudflare-bot-management.schema.json"));
 
 const placeholderBotManagement = { available: true, score: 99, verifiedBot: false, signedAgent: null, staticResource: false, ja3Hash: null, ja4: null, detectionIds: {}, jsDetection: { passed: false } };
-const realBotManagement = { ...placeholderBotManagement, score: 87, ja3Hash: "e7d705a3286e19ea42f587b344ee6865", ja4: "t13d1516h2_8daaf6152771_02713d6af862" };
+const realBotManagement = { ...placeholderBotManagement, score: 87, signedAgent: false, ja3Hash: "e7d705a3286e19ea42f587b344ee6865", ja4: "t13d1516h2_8daaf6152771_02713d6af862" };
 
 function byName(rows) {
   return Object.fromEntries(rows.map((row) => [row.name, row]));
@@ -115,7 +115,7 @@ describe("Managed bot score and TLS fingerprint", () => {
 
   it("keeps real Bot Management data with its score", () => {
     const bot = normalizeCloudflareBotManagement(realBotManagement);
-    expect(bot).toMatchObject({ available: true, score: 87, ja4: realBotManagement.ja4 });
+    expect(bot).toMatchObject({ available: true, score: 87, signedAgent: false, ja4: realBotManagement.ja4 });
     expect(validateBotManagement(bot)).toBe(true);
     expect(validateBotManagement(normalizeCloudflareBotManagement(placeholderBotManagement))).toBe(true);
     expect(validateBotManagement({ available: true, score: 99 })).toBe(false);
@@ -166,6 +166,15 @@ describe("Worker consistency on a clean browser", () => {
     expect(webdriverRow.status).not.toBe("differs");
     expect(webdriverRow.values).toMatchObject({ Window: "false", Iframe: "false", "Web Worker": "not exposed", "Service Worker": "not exposed" });
     expect(byName(buildCheckRows(report({ client })))["Worker consistency"].status).toBe("pass");
+  });
+
+  it("keeps n/a for a service worker that was unsupported or errored", () => {
+    for (const serviceWorker of [{ supported: false }, { error: "timeout" }]) {
+      const client = { ...goodClient, browser: { ...goodClient.browser, webdriver: false }, workers: { ...cleanWorkers(false), serviceWorker } };
+      const webdriverRow = buildWorkerConsistencyRows({ client }).find((row) => row.label === "WebDriver");
+      expect(webdriverRow.values["Service Worker"]).toBe("n/a");
+      expect(webdriverRow.values["Web Worker"]).toBe("not exposed");
+    }
   });
 
   it("still warns when window and iframe disagree", () => {

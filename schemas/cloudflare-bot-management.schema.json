@@ -18,7 +18,7 @@
         "available": { "const": true },
         "score": { "type": ["integer", "null"] },
         "verifiedBot": { "type": ["boolean", "null"] },
-        "signedAgent": { "type": ["object", "string", "null"] },
+        "signedAgent": { "type": ["boolean", "object", "string", "null"] },
         "staticResource": { "type": ["boolean", "null"] },
         "ja3Hash": { "type": ["string", "null"] },
         "ja4": { "type": ["string", "null"] },

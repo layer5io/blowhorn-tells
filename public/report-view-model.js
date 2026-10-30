@@ -209,7 +209,8 @@ function compareContextValue(label, contexts, key, { notExposedIn = [] } = {}) {
   const values = Object.fromEntries(
     Object.entries(contexts).map(([name, context]) => {
       const raw = context?.[key];
-      if (notExposedIn.includes(name) && (raw === undefined || raw === null)) {
+      const collected = Boolean(context) && !context.error && context.supported !== false;
+      if (notExposedIn.includes(name) && collected && (raw === undefined || raw === null)) {
         excluded.add(name);
         return [name, "not exposed"];
       }
