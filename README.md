@@ -28,6 +28,8 @@ curl https://tells.blowhorn.ai/api/check
 | `/api/ping` | GET | Latency sample (the page calls it while it collects) |
 | `/api/report` | POST | Full verdict for a client report the page collected |
 
+Check rows and `server.cloudflareBotManagement` have JSON Schemas (draft 2020-12) in `schemas/`; unit tests validate the real output against them.
+
 API routes are rate limited at the Worker edge by route and client IP (30 calls a minute by default).
 
 ## Privacy

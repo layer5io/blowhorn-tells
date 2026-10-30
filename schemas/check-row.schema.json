@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tells.blowhorn.ai/schemas/v1/check-row.schema.json",
+  "title": "Check row",
+  "description": "One row of the checks table as returned by buildCheckRows(): what a check observed and its pass, warn, fail or not-available status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "slug", "status", "symbol", "label", "result", "finding"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "slug": { "type": ["string", "null"] },
+    "status": { "enum": ["pass", "warn", "fail", "na"] },
+    "symbol": { "type": "string", "minLength": 1 },
+    "label": { "type": "string", "minLength": 1 },
+    "result": { "type": "string" },
+    "finding": { "type": ["string", "null"] }
+  }
+}
