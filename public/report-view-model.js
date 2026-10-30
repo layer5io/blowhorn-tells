@@ -107,7 +107,7 @@ export function buildWorkerConsistencyRows(report) {
     compareContextValue("Language", contexts, "language"),
     compareContextValue("Hardware threads", contexts, "hardwareConcurrency"),
     compareContextValue("Device memory", contexts, "deviceMemory"),
-    compareContextValue("WebDriver", contexts, "webdriver"),
+    compareContextValue("WebDriver", contexts, "webdriver", { notExposedIn: ["Web Worker", "Service Worker"] }),
     compareContextValue("User-Agent", contexts, "userAgent")
   ];
 }
@@ -201,11 +201,25 @@ function formatEdgeLatency(report) {
   return `browser median=${formatMs(ping.medianMs)} tcp=${formatMs(cf.clientTcpRtt)} quic=${formatMs(cf.clientQuicRtt)}`;
 }
 
-function compareContextValue(label, contexts, key) {
+// notExposedIn names contexts where the property does not exist at all (navigator.webdriver
+// is on Navigator only, not WorkerNavigator): a missing value there reads "not exposed"
+// and stays out of the comparison.
+function compareContextValue(label, contexts, key, { notExposedIn = [] } = {}) {
+  const excluded = new Set();
   const values = Object.fromEntries(
-    Object.entries(contexts).map(([name, context]) => [name, formatContextValue(context?.[key])])
+    Object.entries(contexts).map(([name, context]) => {
+      const raw = context?.[key];
+      const collected = Boolean(context) && !context.error && context.supported !== false;
+      if (notExposedIn.includes(name) && collected && (raw === undefined || raw === null)) {
+        excluded.add(name);
+        return [name, "not exposed"];
+      }
+      return [name, formatContextValue(raw)];
+    })
   );
-  const presentValues = Object.values(values).filter((value) => value !== "n/a");
+  const presentValues = Object.entries(values)
+    .filter(([name, value]) => !excluded.has(name) && value !== "n/a")
+    .map(([, value]) => value);
   const uniqueValues = new Set(presentValues);
   return {
     label,

@@ -167,8 +167,12 @@ export function inferDatacenterFromOrg(org) {
   };
 }
 
-function normalizeCloudflareBotManagement(botManagement) {
-  if (!botManagement) {
+// Without Bot Management on the zone Cloudflare still fills in placeholders (score 99, no
+// fingerprints). Enterprise Bot Management always sets a JA3 or JA4 on HTTPS requests, so
+// a real fingerprint is the marker that the rest of the data is real.
+export function normalizeCloudflareBotManagement(botManagement) {
+  const hasFingerprint = [botManagement?.ja3Hash, botManagement?.ja4].some((value) => typeof value === "string" && value !== "");
+  if (!hasFingerprint) {
     return { available: false };
   }
   return {

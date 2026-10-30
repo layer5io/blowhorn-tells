@@ -65,7 +65,7 @@ const CHECKS = [
     slug: "managed-bot-score",
     reasons: ["managed_bot_score_low", "managed_bot_score_borderline", "cloudflare_verified_bot"],
     available: ({ server }) => server.cloudflareBotManagement?.available === true,
-    unavailable: () => "not on this plan",
+    unavailable: () => "Bot Management not active",
     observe: ({ server }) => {
       const bot = server.cloudflareBotManagement;
       return join([`score ${bot.score ?? "n/a"} of 99`, bot.verifiedBot ? "verified bot" : null]);
@@ -75,12 +75,11 @@ const CHECKS = [
     name: "TLS fingerprint",
     slug: "tls-fingerprint",
     reasons: [],
-    available: ({ server }) => Boolean(server.cf?.tlsVersion),
-    unavailable: () => "no TLS details",
+    available: ({ server }) => Boolean(server.cloudflareBotManagement?.ja4 || server.cloudflareBotManagement?.ja3Hash),
+    unavailable: () => "no JA4 or JA3 fingerprint",
     observe: ({ server }) => {
-      const bot = server.cloudflareBotManagement || {};
-      const id = bot.ja4 ? `JA4 ${bot.ja4}` : bot.ja3Hash ? `JA3 ${bot.ja3Hash}` : "no JA4 on this plan";
-      return join([server.cf.tlsVersion, id]);
+      const bot = server.cloudflareBotManagement;
+      return join([server.cf?.tlsVersion, bot.ja4 ? `JA4 ${bot.ja4}` : `JA3 ${bot.ja3Hash}`]);
     }
   },
   {
@@ -220,8 +219,6 @@ export function buildCheckRows(report) {
   const reasons = Array.isArray(report?.verdict?.reasons) ? report.verdict.reasons : [];
 
   return CHECKS
-    .filter((check) => check.name !== "Managed bot score" || context.server.cloudflareBotManagement?.available === true)
-    .filter((check) => check.name !== "TLS fingerprint" || context.server.cloudflareBotManagement?.available === true)
     .map((check) => {
       const available = check.available ? check.available(context) : true;
       if (!available) {

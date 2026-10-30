@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tells.blowhorn.ai/schemas/v1/cloudflare-bot-management.schema.json",
+  "title": "Cloudflare Bot Management",
+  "description": "server.cloudflareBotManagement: unavailable when Cloudflare returned only placeholders, otherwise the normalized Bot Management fields (a JA3 or JA4 fingerprint is always present).",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available"],
+      "properties": { "available": { "const": false } }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "score", "verifiedBot", "signedAgent", "staticResource", "ja3Hash", "ja4", "detectionIds", "jsDetection"],
+      "properties": {
+        "available": { "const": true },
+        "score": { "type": ["integer", "null"] },
+        "verifiedBot": { "type": ["boolean", "null"] },
+        "signedAgent": { "type": ["boolean", "object", "string", "null"] },
+        "staticResource": { "type": ["boolean", "null"] },
+        "ja3Hash": { "type": ["string", "null"] },
+        "ja4": { "type": ["string", "null"] },
+        "detectionIds": { "type": ["object", "array", "null"] },
+        "jsDetection": { "type": ["object", "null"] }
+      },
+      "anyOf": [
+        { "properties": { "ja3Hash": { "type": "string", "minLength": 1 } } },
+        { "properties": { "ja4": { "type": "string", "minLength": 1 } } }
+      ]
+    }
+  ]
+}

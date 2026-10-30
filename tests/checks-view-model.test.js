@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildCheckRows, describeUserAgent } from "../public/checks-view-model.js";
+import { buildWorkerConsistencyRows } from "../public/report-view-model.js";
+import Ajv2020 from "ajv/dist/2020.js";
+import { readFileSync } from "node:fs";
+import { normalizeCloudflareBotManagement } from "../src/server-signals.js";
 import { knownGoodBrowserReports } from "./e2e/fixtures/known-good-browsers.js";
 
 const goodClient = knownGoodBrowserReports[0].client;
@@ -20,6 +24,14 @@ function report({ server = {}, client = goodClient, reasons = [] } = {}) {
     verdict: { reasons }
   };
 }
+
+const loadSchema = (name) => JSON.parse(readFileSync(new URL(`../schemas/${name}`, import.meta.url), "utf8"));
+const ajv = new Ajv2020({ allErrors: true });
+const validateRow = ajv.compile(loadSchema("check-row.schema.json"));
+const validateBotManagement = ajv.compile(loadSchema("cloudflare-bot-management.schema.json"));
+
+const placeholderBotManagement = { available: true, score: 99, verifiedBot: false, signedAgent: null, staticResource: false, ja3Hash: null, ja4: null, detectionIds: {}, jsDetection: { passed: false } };
+const realBotManagement = { ...placeholderBotManagement, score: 87, signedAgent: false, ja3Hash: "e7d705a3286e19ea42f587b344ee6865", ja4: "t13d1516h2_8daaf6152771_02713d6af862" };
 
 function byName(rows) {
   return Object.fromEntries(rows.map((row) => [row.name, row]));
@@ -78,7 +90,6 @@ describe("checks table rows", () => {
     const rows = byName(buildCheckRows(report({ client, server: { ipIntel: { enabled: false } } })));
     expect(rows["VPN / proxy / Tor intelligence"]).toMatchObject({ status: "na", label: "Not available", result: "lookup off" });
     expect(rows["Optional human check"]).toMatchObject({ status: "na", result: "not taken" });
-    expect(rows["Managed bot score"]).toBeUndefined();
   });
 
   it("lists flagged network types", () => {
@@ -93,6 +104,84 @@ describe("checks table rows", () => {
     const rows = byName(buildCheckRows(report({ client: null })));
     expect(rows["Browser data"].status).toBe("na");
     expect(rows["Request profile"].status).toBe("pass");
+  });
+});
+
+describe("Managed bot score and TLS fingerprint", () => {
+  it("normalizes Cloudflare placeholder data to unavailable", () => {
+    expect(normalizeCloudflareBotManagement(placeholderBotManagement)).toEqual({ available: false });
+    expect(normalizeCloudflareBotManagement(undefined)).toEqual({ available: false });
+  });
+
+  it("keeps real Bot Management data with its score", () => {
+    const bot = normalizeCloudflareBotManagement(realBotManagement);
+    expect(bot).toMatchObject({ available: true, score: 87, signedAgent: false, ja4: realBotManagement.ja4 });
+    expect(validateBotManagement(bot)).toBe(true);
+    expect(validateBotManagement(normalizeCloudflareBotManagement(placeholderBotManagement))).toBe(true);
+    expect(validateBotManagement({ available: true, score: 99 })).toBe(false);
+  });
+
+  it("shows both rows as not available for placeholder data", () => {
+    const server = { cloudflareBotManagement: normalizeCloudflareBotManagement(placeholderBotManagement) };
+    const rows = byName(buildCheckRows(report({ server })));
+    expect(rows["Managed bot score"]).toMatchObject({ status: "na", label: "Not available", result: "Bot Management not active" });
+    expect(rows["TLS fingerprint"]).toMatchObject({ status: "na", label: "Not available", result: "no JA4 or JA3 fingerprint" });
+  });
+
+  it("passes and fails with real data as before", () => {
+    const server = { cloudflareBotManagement: normalizeCloudflareBotManagement(realBotManagement) };
+    let rows = byName(buildCheckRows(report({ server })));
+    expect(rows["Managed bot score"]).toMatchObject({ status: "pass", result: "score 87 of 99" });
+    expect(rows["TLS fingerprint"]).toMatchObject({ status: "pass", result: `TLSv1.3 · JA4 ${realBotManagement.ja4}` });
+    rows = byName(buildCheckRows(report({ server, reasons: [{ id: "managed_bot_score_low", severity: "high", message: "Managed bot score is below 30." }] })));
+    expect(rows["Managed bot score"].status).toBe("fail");
+  });
+
+  it("validates every row against the check-row schema", () => {
+    const cases = [
+      ...knownGoodBrowserReports.map((entry) => report({ client: entry.client })),
+      report({ server: { cloudflareBotManagement: { available: false } } }),
+      report({ server: { cloudflareBotManagement: normalizeCloudflareBotManagement(realBotManagement) } }),
+      report({ client: null })
+    ];
+    for (const entry of cases) {
+      for (const row of buildCheckRows(entry)) expect(validateRow(row), JSON.stringify([row, validateRow.errors])).toBe(true);
+    }
+    const [sample] = buildCheckRows(report());
+    expect(validateRow({ ...sample, status: "maybe" })).toBe(false);
+    expect(validateRow({ ...sample, extra: 1 })).toBe(false);
+  });
+});
+
+describe("Worker consistency on a clean browser", () => {
+  const cleanWorkers = (webdriver) => ({
+    webWorker: { ...goodClient.workers.webWorker, webdriver: null },
+    iframe: { ...goodClient.workers.iframe, webdriver },
+    serviceWorker: { ...goodClient.workers.serviceWorker, webdriver: undefined }
+  });
+
+  it("does not warn when only the workers lack navigator.webdriver", () => {
+    const client = { ...goodClient, browser: { ...goodClient.browser, webdriver: false }, workers: cleanWorkers(false) };
+    const webdriverRow = buildWorkerConsistencyRows({ client }).find((row) => row.label === "WebDriver");
+    expect(webdriverRow.status).not.toBe("differs");
+    expect(webdriverRow.values).toMatchObject({ Window: "false", Iframe: "false", "Web Worker": "not exposed", "Service Worker": "not exposed" });
+    expect(byName(buildCheckRows(report({ client })))["Worker consistency"].status).toBe("pass");
+  });
+
+  it("keeps n/a for a service worker that was unsupported or errored", () => {
+    for (const serviceWorker of [{ supported: false }, { error: "timeout" }]) {
+      const client = { ...goodClient, browser: { ...goodClient.browser, webdriver: false }, workers: { ...cleanWorkers(false), serviceWorker } };
+      const webdriverRow = buildWorkerConsistencyRows({ client }).find((row) => row.label === "WebDriver");
+      expect(webdriverRow.values["Service Worker"]).toBe("n/a");
+      expect(webdriverRow.values["Web Worker"]).toBe("not exposed");
+    }
+  });
+
+  it("still warns when window and iframe disagree", () => {
+    const client = { ...goodClient, browser: { ...goodClient.browser, webdriver: false }, workers: cleanWorkers(true) };
+    const webdriverRow = buildWorkerConsistencyRows({ client }).find((row) => row.label === "WebDriver");
+    expect(webdriverRow.status).toBe("differs");
+    expect(byName(buildCheckRows(report({ client })))["Worker consistency"].status).toBe("warn");
   });
 });
 
