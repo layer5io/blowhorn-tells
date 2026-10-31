@@ -1,6 +1,6 @@
 ---
 name: 💡 Feature Request
-about: Suggest an enhancement to Meshery.
+about: Suggest an enhancement to Blowhorn Tells.
 title: ''
 labels: 'kind/enhancement'
 assignees: ''
@@ -21,5 +21,6 @@ assignees: ''
 <!-- [Optional] Any visual diagrams of the desired user interface. -->
 
 ---
-**[Contributor Guide](https://docs.meshery.io/project/contributing)**
-- 🎨 Wireframes and [designs for Layer5 site](https://www.figma.com/file/5ZwEkSJwUPitURD59YHMEN/Layer5-Designs) in Figma [(open invite)](https://www.figma.com/team_invite/redeem/GvB8SudhEOoq3JOvoLaoMs)
+#### Contributor Guides and Resources
+- 📚 [Contributing Guide](CONTRIBUTING.md)
+- 🙋 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io) (#websites channel)
