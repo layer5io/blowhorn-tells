@@ -16,10 +16,9 @@ assignees: ''
 
 ### Environment
 
-- **Host OS:** Mac Linux Windows
-- **Platform:** Docker or Kubernetes
-- **Meshery Server Version:** stable-v
-- **Meshery Client Version:** stable-v
+- **Host OS:** [e.g. macOS / Linux / Windows]
+- **Browser:** [e.g. Chrome 124, Firefox 125, Safari 17]
+- **Runtime / Node Version:** [e.g. Node.js v20, Cloudflare Worker]
 
 <!-- Optional 
 #### To Reproduce
@@ -30,9 +29,6 @@ assignees: ''
 -->
 
 ---
-#### Contributor [Guides](https://docs.meshery.io/project/contributing) and Resources
-- 🛠 [Meshery Build & Release Strategy](https://docs.meshery.io/project/build-and-release)
-- 📚 [Instructions for contributing to documentation](https://github.com/meshery/meshery/blob/master/CONTRIBUTING.md#documentation-contribution-flow)
-   - Meshery documentation [site](https://docs.meshery.io/) and [source](https://github.com/meshery/meshery/tree/master/docs)
-- 🎨 Wireframes and [designs for Layer5 site](https://www.figma.com/file/5ZwEkSJwUPitURD59YHMEN/Layer5-Designs) in Figma [(open invite)](https://www.figma.com/team_invite/redeem/GvB8SudhEOoq3JOvoLaoMs)
-- 🙋🏾🙋🏼 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io)
+#### Contributor Guides and Resources
+- 📚 [Contributing Guide](CONTRIBUTING.md)
+- 🙋 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io) (#websites channel)
