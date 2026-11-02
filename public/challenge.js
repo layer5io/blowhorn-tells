@@ -51,6 +51,8 @@ export function setupChallenge(state, renderRuntime, runChecks) {
     submitButton.disabled = true;
     status.textContent = "Interaction test complete. Checking the verdict now.";
     renderRuntime(state);
-    runChecks(state);
+    runChecks(state).then((scored) => {
+      if (!scored) status.textContent = "The verdict could not be scored. Press Run the inspection to send the interaction test again.";
+    });
   });
 }

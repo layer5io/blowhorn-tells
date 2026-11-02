@@ -11,6 +11,7 @@ import { renderReport, renderVoice, setStatus, updateHeroReadout } from "./ui.js
 import { failureVoice, verdictVoice } from "./voice.js";
 import { guessPlatformOs, guessUaOs, simplifyPerformanceEntry } from "./utils.js";
 
+// Resolves true when the server returned a verdict, false when the run failed.
 export async function runChecks(state) {
   const runBtn = $("#runBtn");
   runBtn.disabled = true;
@@ -48,9 +49,11 @@ export async function runChecks(state) {
     renderReport(state, report);
     $("#copyBtn").disabled = false;
     $("#downloadBtn").disabled = false;
+    return true;
   } catch (error) {
     renderVoice(failureVoice(String(error && error.message ? error.message : error)));
     $("#jsonOut").textContent = String(error && error.stack ? error.stack : error);
+    return false;
   } finally {
     runBtn.disabled = false;
   }

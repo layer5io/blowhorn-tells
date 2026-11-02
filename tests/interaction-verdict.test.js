@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { INTERACTION_CALIBRATED, scoreReport, withValidInteraction } from "../src/report-verdict.js";
 import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
 import { buildInteractionReport } from "../public/collect-interaction.js";
+import { evaluateInteractionChecks, INTERACTION_CHECK_IDS } from "../public/interaction-checks.js";
 import { humanLike, scriptedElementClick } from "./fixtures/interaction-events.js";
 
 const server = { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" };
@@ -84,8 +85,17 @@ describe("interaction scoring in the Worker", () => {
     const tampered = { ...fromFixture(humanLike()), click: { clicks: [{ target: "menu" }] } };
     expect(withValidInteraction({ browser: {}, interaction: tampered })).toEqual({ browser: {} });
     const valid = fromFixture(humanLike());
-    expect(withValidInteraction({ interaction: valid }).interaction).toBe(valid);
+    expect(withValidInteraction({ interaction: valid }).interaction).toEqual({ ...valid, checks: evaluateInteractionChecks(valid) });
     expect(withValidInteraction({ browser: {} })).toEqual({ browser: {} });
+  });
+
+  it("returns server-derived checks, not a forged all-pass array, for a valid report with failing metrics", () => {
+    const report = allFailingReport();
+    const allPass = INTERACTION_CHECK_IDS.map((id) => ({ id, status: "pass", observed: "forged", provisional: true }));
+    const response = withValidInteraction({ interaction: { ...report, checks: allPass } });
+    expect(response.interaction.checks).toEqual(evaluateInteractionChecks(report));
+    expect(response.interaction.checks.filter((check) => check.status === "fail").length).toBeGreaterThan(0);
+    expect(response.interaction.checks.every((check) => check.status === "pass")).toBe(false);
   });
 
   it("scores nothing for a test that was not completed, even with failing numbers", () => {

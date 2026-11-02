@@ -295,12 +295,15 @@ export function scoreInteraction(interaction, penalize) {
   }
 }
 
-// The client copy that goes back in the response: an interaction report that failed validation is removed.
+// The client copy that goes back in the response: an interaction report that failed validation is removed,
+// and a valid one carries the server-derived checks, so the response never echoes the client's statuses.
 export function withValidInteraction(client) {
   if (!client || client.interaction === undefined || client.interaction === null) return client;
-  if (validateInteractionReport(client.interaction)) return client;
-  const { interaction, ...rest } = client;
-  return rest;
+  if (!validateInteractionReport(client.interaction)) {
+    const { interaction, ...rest } = client;
+    return rest;
+  }
+  return { ...client, interaction: { ...client.interaction, checks: evaluateInteractionChecks(client.interaction) } };
 }
 
 export function scoreRemoteControlTells(client, { isMobileBrowser = false } = {}, penalize) {
