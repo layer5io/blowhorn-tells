@@ -9,6 +9,7 @@ const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "moused
 const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
 const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus"]);
 const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
+const KEY_EVENT_TYPES = new Set(["keydown", "keypress", "keyup"]);
 // Keys that activate a button. collect-interaction.js uses them to mark a click as keyboard-made.
 export const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 const PREMOVE_WINDOW_MS = 1000;
@@ -57,8 +58,9 @@ export function setupEventCapture(state) {
   document.addEventListener("visibilitychange", () => record("visibilitychange", { visibilityState: document.visibilityState }));
 
   // Capture phase, so focus and pointerenter (which do not bubble) are seen too.
+  const controlKeyCodes = new Set();
   INTERACTION_TYPES.forEach((type) => {
-    document.addEventListener(type, (event) => recordInteraction(state, event), { capture: true, passive: true });
+    document.addEventListener(type, (event) => recordInteraction(state, event, controlKeyCodes), { capture: true, passive: true });
   });
 }
 
@@ -86,7 +88,7 @@ function recordPointerTrail(state, event) {
   while (interaction.trail.length && interaction.trail[0].t < t - PREMOVE_WINDOW_MS) interaction.trail.shift();
 }
 
-function recordInteraction(state, event) {
+function recordInteraction(state, event, controlKeyCodes) {
   const interaction = state.interaction;
   if (interaction.endMs !== null) return;
   const element = event.target instanceof Element ? event.target.closest("[data-tells-target]") : null;
@@ -94,7 +96,8 @@ function recordInteraction(state, event) {
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
   // The one exception is Enter or Space on Start, which is how a keyboard user starts the test; collect-interaction.js reads it only to tell the click apart.
-  const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(keyClass(event));
+  const eventKeyClass = KEY_EVENT_TYPES.has(event.type) ? keyClassOf(controlKeyCodes, event) : null;
+  const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(eventKeyClass);
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null && !(target === "start" && activationKey)) return;
   // OS auto-repeat keydowns are ignored by buildTyping, so they are not recorded either; they would fill the buffer.
   if (event.type === "keydown" && event.repeat) return;
@@ -120,8 +123,8 @@ function recordInteraction(state, event) {
   }
   if (event.type === "click") record.detail = event.detail;
   if (event.type === "pointerdown") Object.assign(record, pressPremove(interaction, event.pointerType, t, element.getBoundingClientRect()));
-  if (event.type === "keydown" || event.type === "keypress" || event.type === "keyup") {
-    record.keyClass = keyClass(event);
+  if (eventKeyClass !== null) {
+    record.keyClass = eventKeyClass;
     record.repeat = event.repeat === true;
   }
   if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
@@ -200,6 +203,18 @@ function keyClass(event) {
   if (typeof key !== "string" || key.length !== 1) return "control";
   const shortcut = (event.ctrlKey || event.metaKey || event.altKey) && !event.getModifierState?.("AltGraph");
   return shortcut ? "control" : "printable";
+}
+
+// A keyup takes the class of its keydown when that was control: the modifier of a shortcut is often released
+// before its key, so the keyup alone would look like a typed key. controlKeyCodes holds the codes of keys held as control.
+function keyClassOf(controlKeyCodes, event) {
+  if (event.type === "keyup" && controlKeyCodes.delete(event.code)) return "control";
+  const value = keyClass(event);
+  if (event.type === "keydown") {
+    if (value === "control") controlKeyCodes.add(event.code);
+    else controlKeyCodes.delete(event.code);
+  }
+  return value;
 }
 
 function roundOne(value) {
