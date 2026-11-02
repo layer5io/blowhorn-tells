@@ -30,7 +30,7 @@ function collectWebdriverDescriptor() {
   };
 }
 
-function isNative(fn) {
+export function isNative(fn) {
   try {
     return Function.prototype.toString.call(fn).includes("[native code]");
   } catch (_) {
@@ -43,7 +43,12 @@ export function chromeMajor(userAgent) {
   return match ? Number(match[1]) : null;
 }
 
-const INPUT_TYPES = new Set(["pointerdown", "pointerup", "click", "keydown"]);
+// Every input-carrying event the page records: the state log (pointer, click, key) and the
+// interaction test (mouse, key, text and paste events on its three targets).
+const INPUT_TYPES = new Set([
+  "pointerdown", "pointerup", "click", "keydown",
+  "pointerover", "pointerenter", "mousedown", "mouseup", "keypress", "keyup", "beforeinput", "input", "paste"
+]);
 
 export function summarizeInput(events) {
   const input = events.filter((event) => INPUT_TYPES.has(event.type) && typeof event.isTrusted === "boolean");

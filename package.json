@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check": "for file in src/*.js public/*.js; do node --check \"$file\"; done",
+    "build:validators": "node scripts/build-validators.mjs",
+    "check": "pnpm build:validators && for file in src/*.js public/*.js; do node --check \"$file\"; done",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:all": "pnpm check && pnpm test && pnpm test:e2e"
