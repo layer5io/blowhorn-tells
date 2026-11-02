@@ -40,7 +40,12 @@ export const INTERACTION_CHECK_IDS = [
   "int_task_speed"
 ];
 
-const CLICK_ORDER = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"];
+// Each press goes down before it comes up, and the pointer event before its mouse event. Whether mousedown comes before
+// or after pointerup is left open: a mouse press fires it before, a touch tap fires its mouse events after pointerup.
+const CLICK_ORDERS = [
+  ["pointerdown", "pointerup", "mouseup", "click"],
+  ["pointerdown", "mousedown", "mouseup", "click"]
+];
 const T = INTERACTION_THRESHOLDS;
 
 // Each evaluator returns { status, observed } from the report alone.
@@ -66,7 +71,7 @@ const EVALUATORS = {
     if (!pointer.length) return result("pass", `keyboard activation on all ${clicks.length} clicks`);
     const missing = pointer.filter((click) => !click.chain.includes("pointerdown") && !click.chain.includes("mousedown"));
     if (missing.length) return result("fail", `${missing.length} of ${pointer.length} pointer clicks had no pointerdown or mousedown`);
-    const disordered = pointer.filter((click) => !inOrder(click.chain, CLICK_ORDER));
+    const disordered = pointer.filter((click) => !CLICK_ORDERS.every((order) => inOrder(click.chain, order)));
     if (disordered.length) return result("warn", `${disordered.length} of ${pointer.length} pointer clicks had an incomplete or out-of-order press and release`);
     return result("pass", keyboard
       ? `full press and release chain on ${pointer.length} pointer clicks, keyboard activation on ${keyboard}`

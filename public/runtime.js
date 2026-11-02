@@ -94,7 +94,7 @@ function recordInteraction(state, event) {
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
   // The one exception is Enter or Space on Start, which is how a keyboard user starts the test; collect-interaction.js reads it only to tell the click apart.
-  const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(keyClass(event.key));
+  const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(keyClass(event));
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null && !(target === "start" && activationKey)) return;
   // OS auto-repeat keydowns are ignored by buildTyping, so they are not recorded either; they would fill the buffer.
   if (event.type === "keydown" && event.repeat) return;
@@ -120,7 +120,7 @@ function recordInteraction(state, event) {
   if (event.type === "click") record.detail = event.detail;
   if (event.type === "pointerdown") Object.assign(record, pressPremove(interaction, event.pointerType, t, element.getBoundingClientRect()));
   if (event.type === "keydown" || event.type === "keypress" || event.type === "keyup") {
-    record.keyClass = keyClass(event.key);
+    record.keyClass = keyClass(event);
     record.repeat = event.repeat === true;
   }
   if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
@@ -192,10 +192,14 @@ function distanceToRect(x, y, rect) {
 }
 
 // Only the class of a key is kept: printable, space, enter or control. The key itself is never stored.
-function keyClass(key) {
+// A character pressed with Ctrl or Meta is a shortcut (Ctrl+V, Cmd+A), not typing. AltGr sets ctrlKey too, but types.
+function keyClass(event) {
+  const { key } = event;
   if (key === " ") return "space";
   if (key === "Enter") return "enter";
-  return typeof key === "string" && key.length === 1 ? "printable" : "control";
+  if (typeof key !== "string" || key.length !== 1) return "control";
+  const shortcut = (event.ctrlKey || event.metaKey) && !event.getModifierState?.("AltGraph");
+  return shortcut ? "control" : "printable";
 }
 
 function roundOne(value) {

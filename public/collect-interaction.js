@@ -78,10 +78,11 @@ function buildClicks(recorded) {
 // Its pointer geometry is null: the event has no pointer position, and its coordinates are zero.
 function describeClick(buffer, keyActivated) {
   const click = buffer[buffer.length - 1];
-  const pointerDown = lastOfType(buffer, "pointerdown");
-  const downIndex = lastIndexOfType(buffer, "mousedown");
-  const upIndex = downIndex === -1 ? -1 : buffer.findIndex((event, index) => index > downIndex && event.type === "mouseup");
-  const keyboard = keyActivated && pointerDown === undefined && downIndex === -1;
+  const downIndex = lastIndexOfType(buffer, "pointerdown");
+  const pointerDown = downIndex === -1 ? undefined : buffer[downIndex];
+  // The press is timed on the pointer events: a touch tap fires its mousedown and mouseup together after pointerup.
+  const upIndex = downIndex === -1 ? -1 : buffer.findIndex((event, index) => index > downIndex && event.type === "pointerup");
+  const keyboard = keyActivated && pointerDown === undefined && lastIndexOfType(buffer, "mousedown") === -1;
   const described = {
     target: click.target,
     isTrusted: click.isTrusted,
@@ -193,11 +194,6 @@ function lastIndexOfType(buffer, type) {
     if (buffer[index].type === type) return index;
   }
   return -1;
-}
-
-function lastOfType(buffer, type) {
-  const index = lastIndexOfType(buffer, type);
-  return index === -1 ? undefined : buffer[index];
 }
 
 function round1(value) {

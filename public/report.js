@@ -11,8 +11,14 @@ import { renderReport, renderVoice, setStatus, updateHeroReadout } from "./ui.js
 import { failureVoice, verdictVoice } from "./voice.js";
 import { guessPlatformOs, guessUaOs, simplifyPerformanceEntry } from "./utils.js";
 
-// Resolves true when the server returned a verdict, false when the run failed.
+let latestRun = 0;
+
+// Resolves true when the server returned a verdict, false when the run failed, and null when a newer run
+// started before this one finished. Only the newest run touches the page, so an older, slower run cannot
+// overwrite its verdict or re-enable the Run button while it is still running.
 export async function runChecks(state) {
+  const run = ++latestRun;
+  const isLatest = () => run === latestRun;
   const runBtn = $("#runBtn");
   runBtn.disabled = true;
   renderVoice(verdictVoice("pending"), "Collecting signals in this browser.");
@@ -43,19 +49,22 @@ export async function runChecks(state) {
       interaction: state.interaction.report || notTakenInteraction()
     };
 
+    if (!isLatest()) return null;
     setStatus("Inspection in progress. Sending the readings to the server for scoring.");
     const report = await postReport(client);
+    if (!isLatest()) return null;
     state.report = report;
     renderReport(state, report);
     $("#copyBtn").disabled = false;
     $("#downloadBtn").disabled = false;
     return true;
   } catch (error) {
+    if (!isLatest()) return null;
     renderVoice(failureVoice(String(error && error.message ? error.message : error)));
     $("#jsonOut").textContent = String(error && error.stack ? error.stack : error);
     return false;
   } finally {
-    runBtn.disabled = false;
+    if (isLatest()) runBtn.disabled = false;
   }
 }
 

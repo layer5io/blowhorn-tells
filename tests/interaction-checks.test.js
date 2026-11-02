@@ -70,6 +70,13 @@ describe("interaction check thresholds", () => {
     expect(status(report({ clicks: [click()] }), "int_click_chain")).toBe("pass");
   });
 
+  it("int_click_chain: a touch tap whose mouse events follow pointerup passes, a mouse event ahead of its pointer event warns", () => {
+    const touch = click({ pointerType: "touch", chain: ["pointerdown", "pointerup", "mousedown", "focus", "mouseup", "click"] });
+    expect(status(report({ clicks: [touch] }), "int_click_chain")).toBe("pass");
+    expect(status(report({ clicks: [click({ chain: ["mousedown", "pointerdown", "pointerup", "mouseup", "click"] })] }), "int_click_chain")).toBe("warn");
+    expect(status(report({ clicks: [click({ chain: ["pointerdown", "mousedown", "mouseup", "pointerup", "click"] })] }), "int_click_chain")).toBe("warn");
+  });
+
   it("int_click_detail: a trusted click with detail 0 fails", () => {
     expect(status(report({ clicks: [click({ detail: 0 })] }), "int_click_detail")).toBe("fail");
     expect(status(report({ clicks: [click({ detail: 0, isTrusted: false })] }), "int_click_detail")).toBe("na");
