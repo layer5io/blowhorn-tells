@@ -122,10 +122,10 @@ function evictInteractionEvent(events) {
   return true;
 }
 
-// Called when challenge.js rejects a Submit press, either before Start or for a wrong phrase. Removes
-// that attempt's Submit events, from the pointerdown or keydown that started it to the end, so the
-// rejected attempts do not fill the buffer and only the accepted Submit chain stays. Hovers before the
-// press are left alone.
+// Called when challenge.js rejects a Submit press, before Start, for a wrong phrase, or when the report
+// fails validation. Removes that attempt's Submit events, from the pointerdown or keydown that started it
+// to the end, so the rejected attempts do not fill the buffer and only the accepted Submit chain stays.
+// Hovers before the press are left alone.
 export function discardSubmitAttempt(state) {
   const events = state.interaction.events;
   let start = events.length;

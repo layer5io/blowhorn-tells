@@ -44,6 +44,7 @@ export function setupChallenge(state, renderRuntime, runChecks) {
     });
     if (!validateInteractionReport(report)) {
       state.interaction.endMs = null;
+      discardSubmitAttempt(state);
       status.textContent = "The interaction test could not be scored in this browser.";
       return;
     }
