@@ -59,6 +59,10 @@ describe("interaction check thresholds", () => {
     expect(status(report({ typing: { untrusted: 1 } }), "int_trusted")).toBe("fail");
   });
 
+  it("int_trusted: a script-made click fails even when typing.untrusted says 0", () => {
+    expect(status(report({ clicks: [click({ isTrusted: false })] }), "int_trusted")).toBe("fail");
+  });
+
   it("int_click_chain: missing press fails, reordered press warns, full chain passes", () => {
     expect(status(report({ clicks: [click({ chain: ["focus", "click"] })] }), "int_click_chain")).toBe("fail");
     expect(status(report({ clicks: [click({ chain: ["pointerdown", "mousedown", "click", "pointerup", "mouseup"] })] }), "int_click_chain")).toBe("warn");
