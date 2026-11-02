@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tells.blowhorn.ai/schemas/v1/interaction-report.schema.json",
+  "title": "Interaction report",
+  "description": "Summary of the interaction test: counts, timings and event-order facts for one Start, type, Submit run. No raw event stream, no key values, no page coordinates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "task", "click", "typing", "checks"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phraseLength", "completed", "durationMs"],
+      "properties": {
+        "phraseLength": { "type": "integer", "minimum": 1 },
+        "completed": { "type": "boolean" },
+        "durationMs": { "type": ["number", "null"], "minimum": 0 },
+        "fullscreen": { "type": "boolean" }
+      }
+    },
+    "click": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clicks"],
+      "properties": {
+        "clicks": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["target", "isTrusted", "activation", "chain", "detail", "offsetFromCentre", "screenMinusClient"],
+            "properties": {
+              "target": { "enum": ["start", "submit"] },
+              "isTrusted": { "type": "boolean" },
+              "activation": { "enum": ["pointer", "keyboard"] },
+              "pointerType": { "enum": ["mouse", "pen", "touch", "", null] },
+              "chain": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "enum": ["pointerover", "pointerenter", "pointermove", "pointerdown", "mousedown", "focus", "pointerup", "mouseup", "click"]
+                }
+              },
+              "detail": { "type": "integer" },
+              "offsetFromCentre": {
+                "description": "Null for a keyboard activation, which has no pointer position.",
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["dx", "dy"],
+                "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }
+              },
+              "screenMinusClient": {
+                "description": "Null for a keyboard activation, which has no pointer position.",
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["dx", "dy"],
+                "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }
+              },
+              "premoveSamples": { "type": "integer", "minimum": 0 },
+              "premovePathPx": { "type": "number", "minimum": 0 },
+              "coalescedMin": { "type": ["integer", "null"], "minimum": 0 },
+              "pressMs": { "type": ["number", "null"], "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "typing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["counts", "untrusted", "inputTypes", "inputWithoutKeydown"],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["keydown", "keypress", "beforeinput", "input", "keyup", "paste"],
+          "properties": {
+            "keydown": { "type": "integer", "minimum": 0 },
+            "keypress": { "type": "integer", "minimum": 0 },
+            "beforeinput": { "type": "integer", "minimum": 0 },
+            "input": { "type": "integer", "minimum": 0 },
+            "keyup": { "type": "integer", "minimum": 0 },
+            "paste": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "untrusted": { "type": "integer", "minimum": 0 },
+        "inputTypes": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "inputWithoutKeydown": { "type": "integer", "minimum": 0 },
+        "valueMatches": { "type": "boolean" },
+        "valueSetterNative": { "type": ["boolean", "null"] },
+        "intervalMs": { "$ref": "#/$defs/stats" },
+        "dwellMs": { "$ref": "#/$defs/stats" }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "observed"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^int_[a-z_]+$" },
+          "status": { "enum": ["pass", "warn", "fail", "na"] },
+          "observed": { "type": "string" },
+          "provisional": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stats": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["n"],
+      "properties": {
+        "n": { "type": "integer" },
+        "mean": { "type": "number" },
+        "median": { "type": "number" },
+        "stdDev": { "type": "number" },
+        "cv": { "type": "number" },
+        "min": { "type": "number" }
+      }
+    }
+  }
+}

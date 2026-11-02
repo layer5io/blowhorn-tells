@@ -19,7 +19,7 @@ function boot() {
   setupRafProbe(state);
   setupPerformanceProbe(state, renderPerformanceMemorySurface);
   setupSensorProbe(state);
-  setupChallenge(state, renderRuntime);
+  setupChallenge(state, renderRuntime, runChecks);
   setupButtons(state, runChecks, setStatus);
   renderRuntime(state);
   updateHeroReadout();

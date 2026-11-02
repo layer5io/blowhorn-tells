@@ -1,5 +1,6 @@
 import { collectAutomationSignals, collectBrowser } from "./collect-browser.js";
 import { collectFingerprints } from "./collect-fingerprints.js";
+import { buildInteractionReport, INTERACTION_PHRASE } from "./collect-interaction.js";
 import { collectNetwork } from "./collect-network.js";
 import { collectSurfaceIndicators } from "./collect-surfaces.js";
 import { collectTells } from "./collect-tells.js";
@@ -10,11 +11,19 @@ import { renderReport, renderVoice, setStatus, updateHeroReadout } from "./ui.js
 import { failureVoice, verdictVoice } from "./voice.js";
 import { guessPlatformOs, guessUaOs, simplifyPerformanceEntry } from "./utils.js";
 
+let latestRun = 0;
+
+// Resolves true when the server returned a verdict, false when the run failed, and null when a newer run
+// started before this one finished. Only the newest run touches the page, so an older, slower run cannot
+// overwrite its verdict or re-enable the Run button while it is still running.
 export async function runChecks(state) {
+  const run = ++latestRun;
+  const isLatest = () => run === latestRun;
   const runBtn = $("#runBtn");
   runBtn.disabled = true;
   renderVoice(verdictVoice("pending"), "Collecting signals in this browser.");
   updateHeroReadout({ webdriver: "checking", verdict: "pending", behaviour: "sampling" });
+  showInteractionStatus(state, "Interaction test complete. Checking the verdict now.");
 
   try {
     const browser = await collectBrowser();
@@ -38,21 +47,47 @@ export async function runChecks(state) {
       network,
       consistency: computeConsistency(browser, workers, network),
       behavior: computeBehavior(state),
-      challenge: { ...state.challenge }
+      interaction: state.interaction.report || notTakenInteraction()
     };
 
+    if (!isLatest()) return null;
     setStatus("Inspection in progress. Sending the readings to the server for scoring.");
     const report = await postReport(client);
+    if (!isLatest()) return null;
     state.report = report;
     renderReport(state, report);
     $("#copyBtn").disabled = false;
     $("#downloadBtn").disabled = false;
+    showInteractionStatus(state, "Interaction test complete. The verdict is shown above.");
+    return true;
   } catch (error) {
+    if (!isLatest()) return null;
     renderVoice(failureVoice(String(error && error.message ? error.message : error)));
     $("#jsonOut").textContent = String(error && error.stack ? error.stack : error);
+    showInteractionStatus(state, "The verdict could not be scored. Press Run the inspection to send the interaction test again.");
+    return false;
   } finally {
-    runBtn.disabled = false;
+    if (isLatest()) runBtn.disabled = false;
   }
+}
+
+// Every run, from Submit or from the Run button, carries the completed interaction test, so the
+// test's status line follows the newest run's outcome rather than only the run Submit started.
+function showInteractionStatus(state, text) {
+  if (state.interaction.report) $("#challengeStatus").textContent = text;
+}
+
+// The interaction report is always sent. Before Submit it describes an untaken test, which scores nothing.
+function notTakenInteraction() {
+  return buildInteractionReport([], {
+    phraseLength: INTERACTION_PHRASE.length,
+    startMs: null,
+    endMs: null,
+    completed: false,
+    valueMatches: false,
+    valueSetterNative: null,
+    fullscreen: false
+  });
 }
 
 async function postReport(client) {

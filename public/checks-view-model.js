@@ -1,3 +1,4 @@
+import { INTERACTION_CHECK_IDS } from "./interaction-checks.js";
 import { buildWebRtcComparison, buildWorkerConsistencyRows } from "./report-view-model.js";
 
 // One row per check: what was observed, and a pass/warn/fail/n.a. status taken from
@@ -203,12 +204,21 @@ const CHECKS = [
     }
   },
   {
-    name: "Optional human check",
-    slug: "human-check",
-    reasons: [],
-    available: ({ client }) => client?.challenge?.completed === true,
+    name: "Interaction",
+    slug: "interaction",
+    reasons: INTERACTION_CHECK_IDS,
+    // A completed test whose checks are all not-judged has no evidence either, so it reads as not taken.
+    available: ({ client }) => client?.interaction?.task?.completed === true && (client.interaction.checks || []).some((check) => check.status !== "na"),
     unavailable: () => "not taken",
-    observe: () => "completed"
+    observe: ({ client }) => {
+      const checks = client.interaction.checks || [];
+      const judged = checks.filter((check) => check.status !== "na").length;
+      const seconds = client.interaction.task.durationMs;
+      return join([
+        Number.isFinite(seconds) ? `${(seconds / 1000).toFixed(1)} s from Start to Submit` : null,
+        `${judged} of ${checks.length} checks judged`
+      ]);
+    }
   }
 ];
 

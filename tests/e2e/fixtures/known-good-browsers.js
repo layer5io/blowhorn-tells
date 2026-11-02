@@ -285,12 +285,6 @@ function buildBrowserReport({ name, headers, browser, worker }) {
           elapsedMs: 5600,
           counts: { pointermove: 9, pointerdown: 1, click: 1, keydown: 2, scroll: 1 }
         }
-      },
-      challenge: {
-        completed: true,
-        formSubmitted: true,
-        confirmed: true,
-        tableCompleted: true
       }
     }
   };

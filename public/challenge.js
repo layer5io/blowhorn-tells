@@ -1,54 +1,68 @@
+import { buildInteractionReport, INTERACTION_PHRASE, readFieldFacts } from "./collect-interaction.js";
+import { validateInteractionReport } from "./generated/validate-interaction-report.js";
 import { $ } from "./dom.js";
+import { discardSubmitAttempt } from "./runtime.js";
 
-export function setupChallenge(state, renderRuntime) {
-  const form = $("#challengeForm");
-  const wrap = $("#challengeTableWrap");
+// The interaction test: Start, type the fixed phrase, Submit. The three elements carry
+// data-tells-target so the capture in runtime.js and any harness can find them.
+export function setupChallenge(state, renderRuntime, runChecks) {
+  const startButton = $('[data-tells-target="start"]');
+  const field = $('[data-tells-target="phrase"]');
+  const submitButton = $('[data-tells-target="submit"]');
   const status = $("#challengeStatus");
-  const table = $("#challengeTable");
+  const nowMs = () => Math.round(performance.now() - state.startedAt);
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    state.challenge.formSubmitted = true;
-    state.challenge.submittedAtMs = Math.round(performance.now() - state.startedAt);
-
-    if (window.confirm("Start the human check?")) {
-      state.challenge.confirmAccepted = true;
-      state.challenge.tableShown = true;
-      wrap.classList.remove("hidden");
-      status.textContent = "Match each target value, then verify the row.";
-    }
+  startButton.addEventListener("click", () => {
+    if (state.interaction.startMs !== null) return;
+    state.interaction.startMs = nowMs();
+    field.disabled = false;
+    status.textContent = `Click the field, type ${INTERACTION_PHRASE}, then press Submit.`;
     renderRuntime(state);
   });
 
-  table.querySelectorAll("tbody tr").forEach((row) => {
-    const button = row.querySelector("button");
-    const input = row.querySelector("input");
-    const probeName = row.cells[0]?.textContent || "Probe";
-    const target = row.dataset.target || "";
+  submitButton.addEventListener("click", () => {
+    if (state.interaction.endMs !== null) return;
+    if (state.interaction.startMs === null) {
+      discardSubmitAttempt(state);
+      status.textContent = "Press Start first.";
+      return;
+    }
+    // Lost events leave a hole in the chains, so the run is not scored at all. Reloading starts a clean buffer.
+    if (state.interaction.dropped > 0) {
+      status.textContent = "Too many events were recorded to score this run. Reload the page and try again.";
+      return;
+    }
+    const facts = readFieldFacts(field);
+    if (!facts.valueMatches) {
+      discardSubmitAttempt(state);
+      status.textContent = `Type ${INTERACTION_PHRASE} exactly, then press Submit.`;
+      return;
+    }
 
-    button.addEventListener("click", () => {
-      if (button.dataset.updated === "1") return;
-      if (input.value.trim() !== target) {
-        status.textContent = `${probeName}: enter ${target} before verifying.`;
-        input.focus();
-        return;
-      }
-
-      button.dataset.updated = "1";
-      button.textContent = "Verified";
-      button.disabled = true;
-      input.disabled = true;
-      row.classList.add("is-verified");
-      state.challenge.updatedRows += 1;
-      state.challenge.lastUpdatedAtMs = Math.round(performance.now() - state.startedAt);
-      const rowCount = table.querySelectorAll("tbody tr").length;
-      if (state.challenge.updatedRows >= rowCount) {
-        state.challenge.completed = true;
-        status.textContent = "Human check complete. Run checks again to update the verdict.";
-      } else {
-        status.textContent = `${state.challenge.updatedRows} of ${rowCount} rows verified.`;
-      }
-      renderRuntime(state);
+    const endMs = nowMs();
+    state.interaction.endMs = endMs;
+    const report = buildInteractionReport(state.interaction.events, {
+      ...facts,
+      startMs: state.interaction.startMs,
+      endMs,
+      completed: true,
+      fullscreen: Boolean(document.fullscreenElement)
     });
+    if (!validateInteractionReport(report)) {
+      state.interaction.endMs = null;
+      discardSubmitAttempt(state);
+      status.textContent = "The interaction test could not be scored in this browser.";
+      return;
+    }
+
+    state.interaction.report = report;
+    // Kept for external harnesses (an external Rust runner reads it). Remove it only once a replacement read path exists.
+    window.__tellsInteraction = report;
+    field.disabled = true;
+    submitButton.disabled = true;
+    renderRuntime(state);
+    // Intentional: the checks run on their own after Submit, so the verdict needs no extra press.
+    // runChecks writes the status line from each run's outcome.
+    runChecks(state);
   });
 }

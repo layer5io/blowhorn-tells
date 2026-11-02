@@ -704,7 +704,8 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
-button:disabled {
+button:disabled,
+input:disabled {
   opacity: 0.46;
   cursor: not-allowed;
 }
@@ -1242,58 +1243,11 @@ pre {
   max-width: 780px;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
 .field {
   display: grid;
   gap: 8px;
   color: var(--ink);
   font-weight: 760;
-}
-
-.choice-fieldset {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 14px;
-}
-
-legend {
-  color: var(--ink);
-  font-weight: 700;
-  padding: 0 6px;
-}
-
-.choice-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.choice,
-.check-field {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.choice {
-  min-height: 44px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-deep) 72%, transparent);
-  padding: 10px 12px;
-}
-
-.check-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
 }
 
 input {
@@ -1313,32 +1267,7 @@ input:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-input[type="checkbox"],
-input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-}
-
-input[type="checkbox"] {
-  border-radius: 4px;
-}
-
-.challenge-table input {
-  max-width: 210px;
-}
-
-.challenge-table .is-verified {
-  background: color-mix(in srgb, var(--good) 6%, transparent);
-}
-
-.challenge-table .is-verified td:first-child {
-  color: var(--good);
-}
-
 .hidden { display: none; }
-
-#challengeTableWrap { margin-top: 16px; }
 
 @media (max-width: 900px) {
   .hero {
@@ -1347,7 +1276,6 @@ input[type="checkbox"] {
     padding-top: 26px;
   }
 
-
   .hero-visual { order: 3; max-width: 520px; }
 
   /* Keep the main button in reach on phones: right under the intro. */
@@ -1355,8 +1283,6 @@ input[type="checkbox"] {
 
   .scanner-body { grid-template-columns: 130px minmax(0, 1fr); }
 
-  .choice-grid,
-  .check-list,
   .grid.two { grid-template-columns: 1fr; }
 
   .masonry { columns: 1; }
@@ -1390,8 +1316,6 @@ input[type="checkbox"] {
 
   .actions button { flex: 1 1 140px; }
   .actions > button:first-child { flex-basis: 100%; }
-
-  .form-grid { grid-template-columns: 1fr; }
 
   .kv { grid-template-columns: 1fr; }
 

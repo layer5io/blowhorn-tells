@@ -15,6 +15,10 @@
   matters, and where it matters most.)
 - Which platforms care about which tells:
   https://tells.blowhorn.ai/checks/platforms/
+- The interaction test (Start, type a fixed phrase, Submit): its 13 int_*
+  checks and thresholds are at https://tells.blowhorn.ai/checks/interaction/.
+  They are provisional and warn-only until calibrated on 20+ human runs.
+  The report is window.__tellsInteraction and client.interaction.
 - The tool: https://tells.blowhorn.ai/
 - Source: https://github.com/layer5io/blowhorn-tells
 

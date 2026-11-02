@@ -1,6 +1,8 @@
 // Tells Blowhorn's own release checks look for: what a remote-controlled Chrome gives away
 // that the generic fingerprint collectors do not read.
 
+import { inputEvents } from "./runtime.js";
+
 export const AUTOMATION_GLOBAL_PATTERN = /^(cdc_|\$cdc_|__playwright|__pw_|__pwInitScripts|__puppeteer|_selenium|callSelenium|__webdriver|__driver|__fxdriver|__nightmare|_phantom|__\$webdriverAsyncExecutor|__lastWatirAlert|__chromiumoxide|__rod|__headless)/i;
 
 export function matchAutomationGlobals(names) {
@@ -16,7 +18,7 @@ export function collectTells(state) {
     },
     documentAutomationKeys: matchAutomationGlobals(Object.keys(document)),
     chromeMajor: chromeMajor(navigator.userAgent),
-    input: summarizeInput(state?.events || [])
+    input: summarizeInput(inputEvents(state))
   };
 }
 
@@ -30,7 +32,7 @@ function collectWebdriverDescriptor() {
   };
 }
 
-function isNative(fn) {
+export function isNative(fn) {
   try {
     return Function.prototype.toString.call(fn).includes("[native code]");
   } catch (_) {
@@ -43,7 +45,13 @@ export function chromeMajor(userAgent) {
   return match ? Number(match[1]) : null;
 }
 
-const INPUT_TYPES = new Set(["pointerdown", "pointerup", "click", "keydown"]);
+// Every input-carrying event the page records: the state log (pointer, click, key) and the
+// interaction test (mouse, key, text and paste events on its three targets). collectTells reads both,
+// each event once, through inputEvents; buildInteractionReport reads the interaction test's alone.
+const INPUT_TYPES = new Set([
+  "pointerdown", "pointerup", "click", "keydown",
+  "pointerover", "pointerenter", "mousedown", "mouseup", "keypress", "keyup", "beforeinput", "input", "paste"
+]);
 
 export function summarizeInput(events) {
   const input = events.filter((event) => INPUT_TYPES.has(event.type) && typeof event.isTrusted === "boolean");

@@ -8,7 +8,7 @@ import {
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
 import { buildCheckRows } from "./checks-view-model.js";
-import { computeBehavior } from "./runtime.js";
+import { computeBehavior, interactionCompleted } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
 import { verdictVoice } from "./voice.js";
@@ -23,7 +23,7 @@ export function renderReport(state, report, options = {}) {
   scoreCard.innerHTML = verdict.score == null ? escapeHtml(voice.label) : `${escapeHtml(String(verdict.score))}<small>${escapeHtml(voice.label)}</small>`;
   renderVoice(voice, `Risk: ${verdict.risk || "unknown"}.`);
 
-  renderReasons(verdict.reasons || []);
+  renderReasons(verdict.reasons || [], report);
   renderChecks(report);
   renderServerSummary(report.server || {});
   renderBrowserSummary(state, report.client || {});
@@ -40,7 +40,7 @@ export function renderReport(state, report, options = {}) {
   }
 }
 
-function renderReasons(reasons) {
+function renderReasons(reasons, report) {
   const el = $("#reasons");
   if (!reasons.length) {
     el.innerHTML = `<div class="muted">All quiet. No tells in this report.</div>`;
@@ -50,13 +50,13 @@ function renderReasons(reasons) {
     <div class="reason">
       <strong>${escapeHtml(reason.id)} &middot; ${escapeHtml(reason.severity)} &middot; -${escapeHtml(String(reason.points))}</strong>
       <span>${escapeHtml(reason.message)}</span>
-      ${renderReasonEvidence(reason)}
+      ${renderReasonEvidence(reason, report)}
     </div>
   `).join("");
 }
 
-function renderReasonEvidence(reason) {
-  const evidence = buildReasonEvidence(reason);
+function renderReasonEvidence(reason, report) {
+  const evidence = buildReasonEvidence(reason, report);
   if (!evidence.length) return "";
   return `
     <dl class="reason-evidence">
@@ -129,7 +129,7 @@ function renderBrowserSummary(state, client) {
     "WebRTC public IPs": (webrtc.publicIps || []).join(", ") || "none",
     "WebRTC private/mDNS": `${(webrtc.privateIps || []).join(", ") || "none"} / ${(webrtc.mdnsHosts || []).length || 0} mDNS`,
     "Behavior score": client.behavior?.score ?? "n/a",
-    "Human check": challengeStatus(state)
+    "Interaction test": challengeStatus(state)
   });
 }
 
@@ -176,7 +176,7 @@ export function renderRuntime(state) {
     "Behavior score": behavior.score,
     "Events": Object.entries(behavior.summary.eventCounts).map(([key, value]) => `${key}:${value}`).join(" ") || "none",
     "Pointer distance": behavior.summary.pointerDistance,
-    "Human check": challengeStatus(state)
+    "Interaction test": challengeStatus(state)
   });
   if (!state.report) {
     updateHeroReadout({ behaviour: String(behavior.score) });
@@ -184,7 +184,7 @@ export function renderRuntime(state) {
 }
 
 function challengeStatus(state) {
-  return state.challenge.completed ? "complete" : state.challenge.tableShown ? "in progress" : state.challenge.formSubmitted ? "submitted" : "not started";
+  return interactionCompleted(state) ? "complete" : state.interaction.startMs !== null ? "in progress" : "not started";
 }
 
 function updateHeroReadoutFromReport(report) {

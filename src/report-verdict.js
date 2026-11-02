@@ -1,3 +1,5 @@
+import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
+import { evaluateInteractionChecks } from "../public/interaction-checks.js";
 import { getSuspiciousProxyHeaders } from "./proxy-headers.js";
 import {
   collectClientHintHighEntropyMismatches,
@@ -9,6 +11,16 @@ import {
   parseAcceptLanguage,
   parseClientHintToken
 } from "./header-consistency.js";
+
+// The interaction checks are provisional and stay warn-only until 20+ human runs have set their
+// thresholds. While this is false a raw fail adds a medium reason and a raw warn adds a low one, and
+// the most the checks can ever take off the score is 39, so they cannot make a verdict bot on their own.
+// Setting it to true scores a raw fail high and a raw warn medium.
+export const INTERACTION_CALIBRATED = false;
+
+const INTERACTION_RULES = INTERACTION_CALIBRATED
+  ? { fail: { severity: "high", points: 25 }, warn: { severity: "medium", points: 12 } }
+  : { fail: { severity: "medium", points: 3 }, warn: { severity: "low", points: 1 } };
 
 export function enrichClientConsistency(client, server) {
   if (!client || typeof client !== "object") return client;
@@ -103,7 +115,7 @@ export function enrichClientConsistency(client, server) {
   return { ...client, consistency };
 }
 
-export function scoreReport(report) {
+export function scoreReport(report, interaction = deriveInteraction(report.client?.interaction)) {
   const reasons = [];
   let score = 100;
 
@@ -258,11 +270,53 @@ export function scoreReport(report) {
     else if (behavior.score < 0.5) penalize(12, "behavior_score_borderline", "medium", "Behavior score is borderline.", behavior.summary);
   }
 
+  scoreInteraction(interaction, penalize, new Set(reasons.map((reason) => reason.id)));
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   const classification = score >= 75 ? "likely_human" : score >= 45 ? "suspicious" : "likely_bot";
   const risk = score >= 75 ? "low" : score >= 45 ? "medium" : "high";
 
   return { score, classification, risk, reasons };
+}
+
+// The client's own checks array is ignored: every status is re-derived from the numbers, so the
+// client cannot choose its results. A report that does not match the schema is dropped.
+// Validates the client's interaction report and re-derives its checks from the numbers. Computed once per
+// POST and shared by scoring and the response. Returns undefined when there is no report, null when it does
+// not match the schema, and otherwise the report with server-derived checks.
+export function deriveInteraction(interaction) {
+  if (interaction === undefined || interaction === null) return undefined;
+  if (!validateInteractionReport(interaction)) return null;
+  return { ...interaction, checks: evaluateInteractionChecks(interaction) };
+}
+
+// Takes the result of deriveInteraction, so the report is not validated or evaluated a second time.
+// scoredIds holds the reason ids already scored for this report. int_trusted counts the same script-made events
+// as synthetic_input (scoreRemoteControlTells), so when that has scored, int_trusted keeps its status but adds nothing.
+export function scoreInteraction(interaction, penalize, scoredIds = new Set()) {
+  if (interaction === undefined) return;
+  if (interaction === null) {
+    penalize(5, "interaction_report_invalid", "low", "Interaction report did not match its schema and was not scored.");
+    return;
+  }
+  if (interaction.task.completed !== true) return;
+  for (const check of interaction.checks) {
+    const rule = INTERACTION_RULES[check.status];
+    if (!rule) continue;
+    if (check.id === "int_trusted" && scoredIds.has("synthetic_input")) continue;
+    penalize(rule.points, check.id, rule.severity, `Interaction test: ${check.observed}.`, { status: check.status, provisional: true });
+  }
+}
+
+// The client copy that goes back in the response: an interaction report that failed validation is removed,
+// and a valid one carries the server-derived checks, so the response never echoes the client's statuses.
+export function withValidInteraction(client, interaction = deriveInteraction(client?.interaction)) {
+  if (!client || client.interaction === undefined || client.interaction === null) return client;
+  if (interaction === null) {
+    const { interaction: _invalid, ...rest } = client;
+    return rest;
+  }
+  return { ...client, interaction };
 }
 
 export function scoreRemoteControlTells(client, { isMobileBrowser = false } = {}, penalize) {
@@ -361,8 +415,8 @@ export function detectionMatrix(server, client) {
       { name: "WebRTC network clues", status: "checked", notes: "Candidate and address consistency signals." },
       { name: "Latency", status: "checked", notes: "Browser-to-edge timing signals." },
       { name: "Remote-control tells", status: "checked", notes: "Patched webdriver getters, replaced native functions, driver keys on document, script-generated or hidden-page input, zero-size windows, and permission contradictions." },
-      { name: "Behavioural classification", status: "checked", notes: "Pointer, key, scroll, focus, timing, and human-check activity." },
-      { name: "Optional human check", status: "checked", notes: "Form, confirmation, and table-update interaction signals." }
+      { name: "Behavioural classification", status: "checked", notes: "Pointer, key, scroll, focus, and timing activity." },
+      { name: "Interaction", status: "checked", notes: "Start, type-in and Submit: click order and geometry, press length, key rhythm and dwell, and whether the value arrived as typed keys." }
     );
   }
 

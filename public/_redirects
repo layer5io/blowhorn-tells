@@ -1,0 +1,3 @@
+# /checks/human-check was renamed to /checks/interaction; keep old links working
+/checks/human-check /checks/interaction/ 301
+/checks/human-check/ /checks/interaction/ 301
