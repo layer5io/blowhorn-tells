@@ -1,3 +1,5 @@
+import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
+import { evaluateInteractionChecks } from "../public/interaction-checks.js";
 import { getSuspiciousProxyHeaders } from "./proxy-headers.js";
 import {
   collectClientHintHighEntropyMismatches,
@@ -9,6 +11,16 @@ import {
   parseAcceptLanguage,
   parseClientHintToken
 } from "./header-consistency.js";
+
+// The interaction checks are provisional and stay warn-only until 20+ human runs have set their
+// thresholds. While this is false a raw fail adds a medium reason and a raw warn adds a low one, and
+// the most the checks can ever take off the score is 39, so they cannot make a verdict bot on their own.
+// Setting it to true scores a raw fail high and a raw warn medium.
+export const INTERACTION_CALIBRATED = false;
+
+const INTERACTION_RULES = INTERACTION_CALIBRATED
+  ? { fail: { severity: "high", points: 25 }, warn: { severity: "medium", points: 12 } }
+  : { fail: { severity: "medium", points: 3 }, warn: { severity: "low", points: 1 } };
 
 export function enrichClientConsistency(client, server) {
   if (!client || typeof client !== "object") return client;
@@ -258,11 +270,37 @@ export function scoreReport(report) {
     else if (behavior.score < 0.5) penalize(12, "behavior_score_borderline", "medium", "Behavior score is borderline.", behavior.summary);
   }
 
+  scoreInteraction(client.interaction, penalize);
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   const classification = score >= 75 ? "likely_human" : score >= 45 ? "suspicious" : "likely_bot";
   const risk = score >= 75 ? "low" : score >= 45 ? "medium" : "high";
 
   return { score, classification, risk, reasons };
+}
+
+// The client's own checks array is ignored: every status is re-derived from the numbers, so the
+// client cannot choose its results. A report that does not match the schema is dropped.
+export function scoreInteraction(interaction, penalize) {
+  if (interaction === undefined || interaction === null) return;
+  if (!validateInteractionReport(interaction)) {
+    penalize(5, "interaction_report_invalid", "low", "Interaction report did not match its schema and was not scored.");
+    return;
+  }
+  if (interaction.task.completed !== true) return;
+  for (const check of evaluateInteractionChecks(interaction)) {
+    const rule = INTERACTION_RULES[check.status];
+    if (!rule) continue;
+    penalize(rule.points, check.id, rule.severity, `Interaction test: ${check.observed}.`, { status: check.status, provisional: true });
+  }
+}
+
+// The client copy that goes back in the response: an interaction report that failed validation is removed.
+export function withValidInteraction(client) {
+  if (!client || client.interaction === undefined || client.interaction === null) return client;
+  if (validateInteractionReport(client.interaction)) return client;
+  const { interaction, ...rest } = client;
+  return rest;
 }
 
 export function scoreRemoteControlTells(client, { isMobileBrowser = false } = {}, penalize) {
@@ -361,8 +399,8 @@ export function detectionMatrix(server, client) {
       { name: "WebRTC network clues", status: "checked", notes: "Candidate and address consistency signals." },
       { name: "Latency", status: "checked", notes: "Browser-to-edge timing signals." },
       { name: "Remote-control tells", status: "checked", notes: "Patched webdriver getters, replaced native functions, driver keys on document, script-generated or hidden-page input, zero-size windows, and permission contradictions." },
-      { name: "Behavioural classification", status: "checked", notes: "Pointer, key, scroll, focus, timing, and human-check activity." },
-      { name: "Optional human check", status: "checked", notes: "Form, confirmation, and table-update interaction signals." }
+      { name: "Behavioural classification", status: "checked", notes: "Pointer, key, scroll, focus, and timing activity." },
+      { name: "Interaction", status: "checked", notes: "Start, type-in and Submit: click order and geometry, press length, key rhythm and dwell, and whether the value arrived as typed keys." }
     );
   }
 

@@ -4,6 +4,9 @@ import { buildWorkerConsistencyRows } from "../public/report-view-model.js";
 import Ajv2020 from "ajv/dist/2020.js";
 import { readFileSync } from "node:fs";
 import { normalizeCloudflareBotManagement } from "../src/server-signals.js";
+import { scoreReport } from "../src/report-verdict.js";
+import { buildInteractionReport } from "../public/collect-interaction.js";
+import { humanLike, scriptedElementClick } from "./fixtures/interaction-events.js";
 import { knownGoodBrowserReports } from "./e2e/fixtures/known-good-browsers.js";
 
 const goodClient = knownGoodBrowserReports[0].client;
@@ -47,7 +50,7 @@ describe("checks table rows", () => {
     expect(rows["Proxy indicators"].result).toBe("no forwarding headers");
     expect(rows["Remote-control tells"].result).toBe("no driver globals · native webdriver getter");
     expect(rows["Latency"].result).toContain("TCP 21 ms");
-    expect(rows["Optional human check"].result).toBe("completed");
+    expect(rows["Interaction"].result).toBe("not taken");
     for (const row of Object.values(rows)) expect(row.result).not.toMatch(/^(checked|recorded)$/i);
   });
 
@@ -89,7 +92,7 @@ describe("checks table rows", () => {
     const client = { ...goodClient, challenge: { completed: false } };
     const rows = byName(buildCheckRows(report({ client, server: { ipIntel: { enabled: false } } })));
     expect(rows["VPN / proxy / Tor intelligence"]).toMatchObject({ status: "na", label: "Not available", result: "lookup off" });
-    expect(rows["Optional human check"]).toMatchObject({ status: "na", result: "not taken" });
+    expect(rows["Interaction"]).toMatchObject({ status: "na", result: "not taken" });
   });
 
   it("lists flagged network types", () => {
@@ -191,5 +194,40 @@ describe("User-Agent description", () => {
     expect(describeUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0")).toBe("Edge 155 on Windows");
     expect(describeUserAgent("curl/8.7.1")).toBe("curl");
     expect(describeUserAgent("")).toBe("no User-Agent");
+  });
+});
+
+describe("Interaction row", () => {
+  const server = { ...report().server };
+  const scoredWith = (interaction) => {
+    const client = { ...goodClient, interaction };
+    const verdict = scoreReport({ server, client });
+    return byName(buildCheckRows({ server, client, verdict }));
+  };
+  const reportFrom = ({ events, task }) => buildInteractionReport(events, task);
+
+  it("is not taken until the test is completed", () => {
+    expect(scoredWith(reportFrom({ events: [], task: { startMs: null, endMs: null, completed: false, valueMatches: false, valueSetterNative: null, fullscreen: false } })).Interaction)
+      .toMatchObject({ name: "Interaction", slug: "interaction", status: "na", result: "not taken" });
+  });
+
+  it("passes a person-like run and says how long it took and what was judged", () => {
+    const row = scoredWith(reportFrom(humanLike()))["Interaction"];
+    expect(row).toMatchObject({ status: "pass", label: "Pass", slug: "interaction" });
+    expect(row.result).toMatch(/^\d+\.\d s from Start to Submit · 13 of 13 checks judged$/);
+  });
+
+  it("warns, never fails, on script-made input while the checks are uncalibrated", () => {
+    const rows = scoredWith(reportFrom(scriptedElementClick()));
+    expect(rows["Interaction"].status).toBe("warn");
+    expect(rows["Interaction"].finding).toMatch(/^Interaction test: /);
+    expect(rows["Interaction"].status).not.toBe("fail");
+  });
+
+  it("validates its row against the check-row schema in every state", () => {
+    for (const interaction of [undefined, reportFrom(humanLike()), reportFrom(scriptedElementClick())]) {
+      const row = scoredWith(interaction)["Interaction"];
+      expect(validateRow(row), JSON.stringify(validateRow.errors)).toBe(true);
+    }
   });
 });

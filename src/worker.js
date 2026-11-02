@@ -1,7 +1,7 @@
 import { HttpError, json, JSON_HEADERS, readJsonBody, reportCorsHeaders } from "./http.js";
 import { API_RATE_LIMIT_RETRY_AFTER_SECONDS, checkApiRateLimit } from "./rate-limit.js";
 import { collectServer, collectServerBasics } from "./server-signals.js";
-import { detectionMatrix, enrichClientConsistency, scoreReport } from "./report-verdict.js";
+import { detectionMatrix, enrichClientConsistency, scoreReport, withValidInteraction } from "./report-verdict.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -38,8 +38,9 @@ export default {
       if (url.pathname === "/api/report" && request.method === "POST") {
         const rawClient = await readJsonBody(request, 192 * 1024);
         const server = await collectServer(request, env);
-        const client = enrichClientConsistency(rawClient, server);
-        const verdict = scoreReport({ server, client });
+        const scored = enrichClientConsistency(rawClient, server);
+        const verdict = scoreReport({ server, client: scored });
+        const client = withValidInteraction(scored);
         const detections = detectionMatrix(server, client);
         return json({
           ok: true,
