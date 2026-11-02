@@ -113,9 +113,9 @@
           makes a verdict bot on its own, and the most the 13 checks can take off the score is 39 points.
           A warning adds a low note. When calibration on 20 or more human runs is done, a fail becomes a
           high note; that change is one line in the Worker.</p>
-      <p>Script-made input is scored once. When the page also sees script-made input elsewhere (the
-          <a href="/checks/remote-control-tells/">Remote-control tells</a> check), that counts as its own
-          reason, and <code>int_trusted</code> still shows its fail in the results but adds no second penalty.</p>
+      <p>Script-made input is scored once. The <a href="/checks/remote-control-tells/">Remote-control tells</a>
+          check counts every script-made input event on the page, this task's included, as its own reason.
+          When it has, <code>int_trusted</code> still shows its fail in the results but adds no second penalty.</p>
     </section>
 
     <section class="panel">

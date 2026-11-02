@@ -13,11 +13,19 @@ const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 const PREMOVE_WINDOW_MS = 1000;
 const PREMOVE_NEAR_PX = 200;
 const MAX_INTERACTION_EVENTS = 400;
+// pointerdown, pointerup, click and keydown on the test's targets that bubble up to window land in both
+// state.events and state.interaction.events. These link the two records of one event, so inputEvents counts it once.
+const interactionRecordOf = new WeakMap(); // Event -> its interaction record
+const stateLogCopyOf = new WeakMap(); // interaction record -> the state.events entry for the same event
 
 export function setupEventCapture(state) {
-  const record = (type, detail = {}) => {
-    state.events.push({ type, t: Math.round(performance.now() - state.startedAt), ...detail });
+  const record = (type, detail = {}, event = null) => {
+    const entry = { type, t: Math.round(performance.now() - state.startedAt), ...detail };
+    state.events.push(entry);
     if (state.events.length > 700) state.events.shift();
+    // recordInteraction listens on document in the capture phase, so it has already seen this event.
+    const interactionRecord = event && interactionRecordOf.get(event);
+    if (interactionRecord) stateLogCopyOf.set(interactionRecord, entry);
   };
 
   const pointerHandler = (event) => {
@@ -35,13 +43,13 @@ export function setupEventCapture(state) {
       pointerType: event.pointerType,
       buttons: event.buttons,
       pressure: event.pressure
-    });
+    }, event);
   };
 
   ["pointermove", "pointerdown", "pointerup", "click"].forEach((type) => {
     window.addEventListener(type, pointerHandler, { passive: true });
   });
-  window.addEventListener("keydown", (event) => record("keydown", { ...inputContext(event), code: event.code, repeat: event.repeat }), { passive: true });
+  window.addEventListener("keydown", (event) => record("keydown", { ...inputContext(event), code: event.code, repeat: event.repeat }, event), { passive: true });
   window.addEventListener("scroll", () => record("scroll", { x: Math.round(window.scrollX), y: Math.round(window.scrollY) }), { passive: true });
   window.addEventListener("focus", () => record("focus"));
   window.addEventListener("blur", () => record("blur"));
@@ -116,6 +124,16 @@ function recordInteraction(state, event) {
   if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
 
   interaction.events.push(record);
+  interactionRecordOf.set(event, record);
+}
+
+// Every input event the page holds, each counted once: the state log, plus the interaction events it has no copy of.
+// An interaction event has no state-log copy when its type is one the state log does not record (hovers, mousedown,
+// keyup, beforeinput, input, paste), when it did not bubble to window (a script's dispatchEvent without
+// bubbles: true), or when the state log has since shifted its copy out.
+export function inputEvents(state) {
+  const logged = new Set(state.events);
+  return [...state.events, ...state.interaction.events.filter((event) => !logged.has(stateLogCopyOf.get(event)))];
 }
 
 // Over the cap, drop the oldest hover or focus event first so the Start click chain survives a flood of hovers.

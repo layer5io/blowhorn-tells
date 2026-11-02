@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createInitialState } from "../public/state.js";
 import { buildInteractionReport } from "../public/collect-interaction.js";
-import { computeBehavior, discardSubmitAttempt, pressPremove, setupEventCapture } from "../public/runtime.js";
+import { collectTells, summarizeInput } from "../public/collect-tells.js";
+import { computeBehavior, discardSubmitAttempt, inputEvents, pressPremove, setupEventCapture } from "../public/runtime.js";
 import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
+import { scoreReport, withValidInteraction } from "../src/report-verdict.js";
 
 function makeState(overrides = {}) {
   return {
@@ -171,7 +173,8 @@ describe("discardSubmitAttempt", () => {
 });
 
 // setupEventCapture listens on window and document. These tests stand in for both with plain objects,
-// and call the document listeners directly with the events they need.
+// and call the listeners directly with the events they need, in the browser's order: the document
+// capture listener first, then the window listener once the event bubbles up.
 class FakeElement {
   constructor(target) {
     this.dataset = { tellsTarget: target };
@@ -186,14 +189,21 @@ class FakeElement {
   }
 }
 
+const NON_BUBBLING_TYPES = new Set(["focus", "pointerenter"]);
+
 function pageWithCapture() {
   const listeners = {};
-  globalThis.window = { addEventListener() {}, scrollX: 0, scrollY: 0 };
+  const windowListeners = {};
+  globalThis.window = { addEventListener: (type, handler) => { windowListeners[type] = handler; }, scrollX: 0, scrollY: 0 };
   globalThis.document = { addEventListener: (type, handler) => { listeners[type] = handler; }, hidden: false, hasFocus: () => true };
   globalThis.Element = FakeElement;
   const state = createInitialState({ now: () => 0 });
   setupEventCapture(state);
-  const dispatch = (type, target, extra = {}) => listeners[type]({ type, target: new FakeElement(target), isTrusted: true, ...extra });
+  const dispatch = (type, target, extra = {}) => {
+    const event = { type, target: new FakeElement(target), isTrusted: true, bubbles: !NON_BUBBLING_TYPES.has(type), ...extra };
+    listeners[type]?.(event);
+    if (event.bubbles) windowListeners[type]?.(event);
+  };
   return { state, dispatch };
 }
 
@@ -264,5 +274,61 @@ describe("recordInteraction", () => {
     expect(state.interaction.events).toHaveLength(400);
     expect(state.interaction.events.some((event) => event.type === "pointerover")).toBe(false);
     expect(state.interaction.dropped).toBe(0);
+  });
+});
+
+describe("inputEvents", () => {
+  afterEach(() => {
+    delete globalThis.window;
+    delete globalThis.document;
+    delete globalThis.Element;
+  });
+
+  const press = { pointerType: "mouse", clientX: 50, clientY: 20, screenX: 50, screenY: 104, buttons: 1, pressure: 0.5 };
+  const server = { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" };
+
+  it("feeds untrusted input seen only by the interaction test into tells.input, so synthetic_input scores and int_trusted adds no penalty", () => {
+    const { state, dispatch } = pageWithCapture();
+    dispatch("click", "start", { ...press, detail: 1 });
+    state.interaction.startMs = 1;
+    // A script types into the phrase field: beforeinput, input and paste reach the document listeners only.
+    dispatch("beforeinput", "phrase", { isTrusted: false, inputType: "insertText" });
+    dispatch("input", "phrase", { isTrusted: false, inputType: "insertText" });
+    dispatch("paste", "phrase", { isTrusted: false });
+
+    expect(summarizeInput(state.events).untrusted).toBe(0);
+    const tells = collectTells(state);
+    expect(tells.input).toEqual({ count: 4, untrusted: 3, trustedWhileHidden: 0, trustedWithoutFocus: 0 });
+
+    const interaction = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: true, valueMatches: true, valueSetterNative: true, fullscreen: false });
+    const client = { tells, interaction };
+    const ids = scoreReport({ server, client }).reasons.map((reason) => reason.id);
+    expect(ids).toContain("synthetic_input");
+    expect(ids).not.toContain("int_trusted");
+    expect(withValidInteraction(client).interaction.checks.find((check) => check.id === "int_trusted").status).toBe("fail");
+  });
+
+  it("counts a trusted event that reaches both buffers once", () => {
+    const { state, dispatch } = pageWithCapture();
+    dispatch("pointerdown", "start", press);
+
+    expect(state.events.map((event) => event.type)).toEqual(["pointerdown"]);
+    expect(state.interaction.events.map((event) => event.type)).toEqual(["pointerdown"]);
+    expect(inputEvents(state)).toEqual(state.events);
+    expect(summarizeInput(inputEvents(state))).toEqual({ count: 1, untrusted: 0, trustedWhileHidden: 0, trustedWithoutFocus: 0 });
+  });
+
+  it("counts the interaction copy when the state log never had one or has shifted it out", () => {
+    const { state, dispatch } = pageWithCapture();
+    dispatch("pointerdown", "start", press);
+    // A script's dispatchEvent without bubbles: true never reaches the window listener.
+    state.interaction.startMs = 1;
+    dispatch("keydown", "phrase", { isTrusted: false, bubbles: false, key: "t", repeat: false });
+    expect(summarizeInput(inputEvents(state))).toMatchObject({ count: 2, untrusted: 1 });
+
+    // 700 keydowns outside the test's targets push the pointerdown out of the state log; its interaction copy stays.
+    for (let index = 0; index < 700; index += 1) dispatch("keydown", "elsewhere", { code: "KeyA", repeat: false });
+    expect(state.events.some((event) => event.type === "pointerdown")).toBe(false);
+    expect(summarizeInput(inputEvents(state))).toMatchObject({ count: 702, untrusted: 1 });
   });
 });
