@@ -1,6 +1,7 @@
 import { buildInteractionReport, INTERACTION_PHRASE, readFieldFacts } from "./collect-interaction.js";
 import { validateInteractionReport } from "./generated/validate-interaction-report.js";
 import { $ } from "./dom.js";
+import { discardSubmitAttempt } from "./runtime.js";
 
 // The interaction test: Start, type the fixed phrase, Submit. The three elements carry
 // data-tells-target so the capture in runtime.js and any harness can find them.
@@ -21,11 +22,13 @@ export function setupChallenge(state, renderRuntime, runChecks) {
   submitButton.addEventListener("click", () => {
     if (state.interaction.endMs !== null) return;
     if (state.interaction.startMs === null) {
+      discardSubmitAttempt(state);
       status.textContent = "Press Start first.";
       return;
     }
     const facts = readFieldFacts(field);
     if (!facts.valueMatches) {
+      discardSubmitAttempt(state);
       status.textContent = `Type ${INTERACTION_PHRASE} exactly, then press Submit.`;
       return;
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeBehavior, pressPremove } from "../public/runtime.js";
+import { computeBehavior, discardSubmitAttempt, pressPremove } from "../public/runtime.js";
 
 function makeState(overrides = {}) {
   return {
@@ -100,5 +100,60 @@ describe("pressPremove", () => {
 
   it("ignores moves from another pointer type and moves older than one second", () => {
     expect(press([sample(-50, 400, 320), sample(900, 400, 320, { pointerType: "touch" })])).toMatchObject({ premoveSamples: 0 });
+  });
+});
+
+describe("discardSubmitAttempt", () => {
+  // The events one Submit press leaves in the buffer, from pointerdown through the click.
+  const submitPress = (t) => [
+    { type: "pointerdown", t, target: "submit", isTrusted: true },
+    { type: "mousedown", t, target: "submit", isTrusted: true },
+    { type: "pointerup", t: t + 80, target: "submit", isTrusted: true },
+    { type: "mouseup", t: t + 80, target: "submit", isTrusted: true },
+    { type: "click", t: t + 80, target: "submit", isTrusted: true, detail: 1 }
+  ];
+  const startClick = [
+    { type: "pointerdown", t: 10, target: "start", isTrusted: true },
+    { type: "click", t: 90, target: "start", isTrusted: true, detail: 1 }
+  ];
+  const phraseTyping = [
+    { type: "keydown", t: 200, target: "phrase", keyClass: "printable", repeat: false },
+    { type: "input", t: 201, target: "phrase", inputType: "insertText" }
+  ];
+
+  it("removes the Submit events of a rejected attempt and keeps everything before it", () => {
+    const state = makeState({ interaction: { startMs: 0, report: null, events: [...startClick, ...phraseTyping, ...submitPress(300)] } });
+
+    discardSubmitAttempt(state);
+
+    expect(state.interaction.events).toEqual([...startClick, ...phraseTyping]);
+  });
+
+  it("keeps the final Submit click chain and the buffer under the cap after many rejected Submits", () => {
+    const state = makeState({ interaction: { startMs: 0, report: null, events: [...startClick, ...phraseTyping] } });
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      state.interaction.events.push(...submitPress(300 + attempt * 500));
+      discardSubmitAttempt(state);
+    }
+
+    const correct = submitPress(60000);
+    state.interaction.events.push(...correct);
+
+    expect(state.interaction.events.length).toBeLessThan(400);
+    expect(state.interaction.events.slice(-correct.length)).toEqual(correct);
+    expect(state.interaction.events.filter((event) => event.target === "submit")).toEqual(correct);
+  });
+
+  it("removes a keyboard Submit attempt that starts with keydown", () => {
+    const keyboardPress = [
+      { type: "keydown", t: 400, target: "submit", keyClass: "control", repeat: false },
+      { type: "keyup", t: 420, target: "submit", keyClass: "control", repeat: false },
+      { type: "click", t: 421, target: "submit", isTrusted: true, detail: 0 }
+    ];
+    const state = makeState({ interaction: { startMs: 0, report: null, events: [...startClick, ...keyboardPress] } });
+
+    discardSubmitAttempt(state);
+
+    expect(state.interaction.events).toEqual(startClick);
   });
 });

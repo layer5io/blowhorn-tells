@@ -122,6 +122,20 @@ function evictInteractionEvent(events) {
   return true;
 }
 
+// Called when challenge.js rejects a Submit press, either before Start or for a wrong phrase. Removes
+// that attempt's Submit events, from the pointerdown or keydown that started it to the end, so the
+// rejected attempts do not fill the buffer and only the accepted Submit chain stays. Hovers before the
+// press are left alone.
+export function discardSubmitAttempt(state) {
+  const events = state.interaction.events;
+  let start = events.length;
+  while (start > 0 && events[start - 1].target === "submit") {
+    start -= 1;
+    if (events[start].type === "pointerdown" || events[start].type === "keydown") break;
+  }
+  events.splice(start);
+}
+
 // Counts the moves before a press that show the pointer heading for the pressed element: a move
 // within PREMOVE_NEAR_PX of it, or a move closer to it than the move before. Moves far away and
 // moving away are left out, so pointer wander elsewhere on the page does not count as premove.
