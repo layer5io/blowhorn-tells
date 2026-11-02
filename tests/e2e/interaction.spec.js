@@ -165,3 +165,14 @@ test("a slower inspection started before Submit does not overwrite the verdict f
   await expect(page.locator("#coverageTable tbody tr", { hasText: "Interaction" })).not.toContainText("not taken");
   await expect(page.locator("#runBtn")).toBeEnabled();
 });
+
+test("the phrase field stays disabled until Start, so nothing can be typed before the test is armed", async ({ page }) => {
+  await openDrill(page);
+  const field = page.locator(TARGET.phrase);
+  await expect(field).toBeDisabled();
+  await page.locator(TARGET.start).focus();
+  await page.keyboard.press("Enter");
+  await expect(field).toBeEnabled();
+  await page.keyboard.press("Tab");
+  await expect(field).toBeFocused();
+});

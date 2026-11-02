@@ -704,7 +704,8 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
-button:disabled {
+button:disabled,
+input:disabled {
   opacity: 0.46;
   cursor: not-allowed;
 }
