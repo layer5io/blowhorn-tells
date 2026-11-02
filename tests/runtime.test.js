@@ -216,10 +216,10 @@ describe("recordInteraction", () => {
 
   it("records Enter or Space on Start before the test starts, for keyboard activation only", () => {
     const { state, dispatch } = pageWithCapture();
-    dispatch("keydown", "start", { key: "Enter", repeat: false });
-    dispatch("keyup", "start", { key: " ", repeat: false });
-    dispatch("keydown", "start", { key: "a", repeat: false });
-    dispatch("keydown", "phrase", { key: "a", repeat: false });
+    dispatch("keydown", "start", { key: "Enter", code: "Enter", repeat: false });
+    dispatch("keyup", "start", { key: " ", code: "Space", repeat: false });
+    dispatch("keydown", "start", { key: "a", code: "KeyA", repeat: false });
+    dispatch("keydown", "phrase", { key: "a", code: "KeyA", repeat: false });
 
     expect(state.interaction.events.map((event) => [event.type, event.target, event.keyClass])).toEqual([
       ["keydown", "start", "enter"],
@@ -292,6 +292,19 @@ describe("recordInteraction", () => {
     dispatch("keydown", "phrase", { key: "v", code: "KeyV", repeat: false });
     dispatch("keyup", "phrase", { key: "v", code: "KeyV", repeat: false });
     expect(report().typing.counts).toMatchObject({ keydown: 1, keyup: 1 });
+  });
+
+  it("counts the keyup of a typed key that is still held when a modifier goes down", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 1;
+    dispatch("keydown", "phrase", { key: "t", code: "KeyT", repeat: false });
+    dispatch("keydown", "phrase", { key: "Control", code: "ControlLeft", repeat: false, ctrlKey: true });
+    dispatch("keyup", "phrase", { key: "t", code: "KeyT", repeat: false, ctrlKey: true });
+    dispatch("keyup", "phrase", { key: "Control", code: "ControlLeft", repeat: false });
+
+    const report = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: true, valueMatches: false, valueSetterNative: true, fullscreen: false });
+    expect(report.typing.counts).toMatchObject({ keydown: 1, keyup: 1 });
+    expect(report.typing.dwellMs).toMatchObject({ n: 1 });
   });
 
   it("records a character typed with AltGr as a typed key, though AltGr sets ctrlKey and altKey, and Ctrl or Alt with a key as a shortcut", () => {
