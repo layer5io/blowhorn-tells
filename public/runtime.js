@@ -7,6 +7,7 @@ export const BEHAVIOR_CHECKPOINTS_MS = [1500, 4000, 7000, 10000, 15000];
 const INTERACTION_TARGETS = new Set(["start", "phrase", "submit"]);
 const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click", "focus", "blur", "keydown", "keypress", "keyup", "beforeinput", "input", "paste"];
 const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
+const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus", "blur"]);
 const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
 const PREMOVE_WINDOW_MS = 1000;
 const MAX_INTERACTION_EVENTS = 400;
@@ -18,7 +19,10 @@ export function setupEventCapture(state) {
   };
 
   const pointerHandler = (event) => {
-    if (event.type === "pointermove") recordPointerTrail(state, event);
+    if (event.type === "pointermove") {
+      if (state.interaction.endMs === null) recordPointerTrail(state, event);
+      else state.interaction.trail.length = 0;
+    }
     const now = performance.now();
     if (event.type === "pointermove" && now - state.lastPointerSampleAt < 60) return;
     state.lastPointerSampleAt = now;
@@ -95,7 +99,13 @@ function recordInteraction(state, event) {
   if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
 
   interaction.events.push(record);
-  if (interaction.events.length > MAX_INTERACTION_EVENTS) interaction.events.shift();
+  if (interaction.events.length > MAX_INTERACTION_EVENTS) evictInteractionEvent(interaction.events);
+}
+
+// Over the cap, drop the oldest hover or focus event first so the Start click chain survives a flood of hovers.
+function evictInteractionEvent(events) {
+  const hover = events.findIndex((event) => HOVER_TYPES.has(event.type));
+  events.splice(hover === -1 ? 0 : hover, 1);
 }
 
 function pressPremove(interaction, pointerType, t) {
