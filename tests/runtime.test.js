@@ -308,6 +308,23 @@ describe("inputEvents", () => {
     expect(withValidInteraction(client).interaction.checks.find((check) => check.id === "int_trusted").status).toBe("fail");
   });
 
+  it("counts trusted input seen only by the interaction test while the page is hidden or unfocused", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 1;
+    document.hidden = true;
+    dispatch("paste", "phrase");
+    document.hidden = false;
+    document.hasFocus = () => false;
+    dispatch("input", "phrase", { inputType: "insertFromPaste" });
+
+    expect(state.events).toEqual([]);
+    expect(collectTells(state).input).toEqual({ count: 2, untrusted: 0, trustedWhileHidden: 1, trustedWithoutFocus: 1 });
+    // The report keeps its shape: hidden and hasFocus stay in the page.
+    const report = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: false, valueMatches: false, valueSetterNative: true, fullscreen: false });
+    expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
+    expect(JSON.stringify(report)).not.toMatch(/hidden|hasFocus/);
+  });
+
   it("counts a trusted event that reaches both buffers once", () => {
     const { state, dispatch } = pageWithCapture();
     dispatch("pointerdown", "start", press);

@@ -9,7 +9,8 @@ const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "moused
 const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
 const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus"]);
 const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
-const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
+// Keys that activate a button. collect-interaction.js uses them to mark a click as keyboard-made.
+export const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 const PREMOVE_WINDOW_MS = 1000;
 const PREMOVE_NEAR_PX = 200;
 const MAX_INTERACTION_EVENTS = 400;
@@ -107,7 +108,8 @@ function recordInteraction(state, event) {
   }
 
   const t = Math.round(performance.now() - state.startedAt);
-  const record = { type: event.type, t, target, isTrusted: event.isTrusted };
+  // hidden and hasFocus feed tells.input through inputEvents; buildInteractionReport does not send them.
+  const record = { type: event.type, t, target, ...inputContext(event) };
   if (INTERACTION_POINTER_TYPES.has(event.type)) {
     const rect = element.getBoundingClientRect();
     record.dx = roundOne(event.clientX - (rect.left + rect.width / 2));

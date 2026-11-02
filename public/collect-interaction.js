@@ -4,6 +4,7 @@
 
 import { isNative, summarizeInput } from "./collect-tells.js";
 import { evaluateInteractionChecks } from "./interaction-checks.js";
+import { ACTIVATION_KEY_CLASSES } from "./runtime.js";
 import { standardDeviation } from "./utils.js";
 
 // The fixed phrase. It is never user text, so nothing typed is ever recorded.
@@ -14,8 +15,6 @@ const CHAIN_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mous
 const POINTER_TYPES = new Set(["mouse", "pen", "touch"]);
 const PASTE_INPUT = "insertFromPaste";
 const TYPED_KEY_CLASSES = new Set(["printable", "space"]);
-// Keys that activate a button. Their keydown and keyup are not in the chain: they only mark the click as keyboard-made.
-const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 
 export function buildInteractionReport(events, task) {
   const endMs = task.endMs ?? Infinity;
