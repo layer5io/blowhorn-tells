@@ -115,7 +115,7 @@ export function enrichClientConsistency(client, server) {
   return { ...client, consistency };
 }
 
-export function scoreReport(report) {
+export function scoreReport(report, interaction = deriveInteraction(report.client?.interaction)) {
   const reasons = [];
   let score = 100;
 
@@ -270,7 +270,7 @@ export function scoreReport(report) {
     else if (behavior.score < 0.5) penalize(12, "behavior_score_borderline", "medium", "Behavior score is borderline.", behavior.summary);
   }
 
-  scoreInteraction(client.interaction, penalize);
+  scoreInteraction(interaction, penalize);
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   const classification = score >= 75 ? "likely_human" : score >= 45 ? "suspicious" : "likely_bot";
@@ -281,14 +281,24 @@ export function scoreReport(report) {
 
 // The client's own checks array is ignored: every status is re-derived from the numbers, so the
 // client cannot choose its results. A report that does not match the schema is dropped.
+// Validates the client's interaction report and re-derives its checks from the numbers. Computed once per
+// POST and shared by scoring and the response. Returns undefined when there is no report, null when it does
+// not match the schema, and otherwise the report with server-derived checks.
+export function deriveInteraction(interaction) {
+  if (interaction === undefined || interaction === null) return undefined;
+  if (!validateInteractionReport(interaction)) return null;
+  return { ...interaction, checks: evaluateInteractionChecks(interaction) };
+}
+
+// Takes the result of deriveInteraction, so the report is not validated or evaluated a second time.
 export function scoreInteraction(interaction, penalize) {
-  if (interaction === undefined || interaction === null) return;
-  if (!validateInteractionReport(interaction)) {
+  if (interaction === undefined) return;
+  if (interaction === null) {
     penalize(5, "interaction_report_invalid", "low", "Interaction report did not match its schema and was not scored.");
     return;
   }
   if (interaction.task.completed !== true) return;
-  for (const check of evaluateInteractionChecks(interaction)) {
+  for (const check of interaction.checks) {
     const rule = INTERACTION_RULES[check.status];
     if (!rule) continue;
     penalize(rule.points, check.id, rule.severity, `Interaction test: ${check.observed}.`, { status: check.status, provisional: true });
@@ -297,13 +307,13 @@ export function scoreInteraction(interaction, penalize) {
 
 // The client copy that goes back in the response: an interaction report that failed validation is removed,
 // and a valid one carries the server-derived checks, so the response never echoes the client's statuses.
-export function withValidInteraction(client) {
+export function withValidInteraction(client, interaction = deriveInteraction(client?.interaction)) {
   if (!client || client.interaction === undefined || client.interaction === null) return client;
-  if (!validateInteractionReport(client.interaction)) {
-    const { interaction, ...rest } = client;
+  if (interaction === null) {
+    const { interaction: _invalid, ...rest } = client;
     return rest;
   }
-  return { ...client, interaction: { ...client.interaction, checks: evaluateInteractionChecks(client.interaction) } };
+  return { ...client, interaction };
 }
 
 export function scoreRemoteControlTells(client, { isMobileBrowser = false } = {}, penalize) {

@@ -84,6 +84,10 @@ function recordInteraction(state, event) {
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null) return;
+  // Once Start is armed, later clicks on it do nothing in challenge.js, so they are not recorded either.
+  // The arming click's own pointer chain runs before challenge.js sets startMs, so it is still recorded.
+  if (target === "start" && interaction.startMs !== null && INTERACTION_POINTER_TYPES.has(event.type)) return;
+  if (interaction.events.length >= MAX_INTERACTION_EVENTS && !evictInteractionEvent(interaction.events)) return;
 
   const t = Math.round(performance.now() - state.startedAt);
   const record = { type: event.type, t, target, isTrusted: event.isTrusted };
@@ -103,13 +107,17 @@ function recordInteraction(state, event) {
   if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
 
   interaction.events.push(record);
-  if (interaction.events.length > MAX_INTERACTION_EVENTS) evictInteractionEvent(interaction.events);
 }
 
 // Over the cap, drop the oldest hover or focus event first so the Start click chain survives a flood of hovers.
+// Then the oldest key or input event, so the Submit click chain survives heavy typing.
+// Pointer press and click events are never evicted. With none to drop, returns false and the new event is dropped instead.
 function evictInteractionEvent(events) {
-  const hover = events.findIndex((event) => HOVER_TYPES.has(event.type));
-  events.splice(hover === -1 ? 0 : hover, 1);
+  const index = events.findIndex((event) => HOVER_TYPES.has(event.type));
+  const victim = index === -1 ? events.findIndex((event) => INTERACTION_KEY_TYPES.has(event.type)) : index;
+  if (victim === -1) return false;
+  events.splice(victim, 1);
+  return true;
 }
 
 // Counts the moves before a press that show the pointer heading for the pressed element: a move
