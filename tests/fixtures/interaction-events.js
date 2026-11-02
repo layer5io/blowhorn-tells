@@ -2,7 +2,8 @@
 // Each family returns { events, task } exactly as the page would hand them to buildInteractionReport.
 // Times are milliseconds from page start. Jitter comes from a seeded generator, so runs are repeatable.
 
-const PHRASE = "tells check 42";
+import { INTERACTION_PHRASE as PHRASE } from "../../public/collect-interaction.js";
+
 const START_MS = 2000;
 
 function seeded(seed) {
