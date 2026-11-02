@@ -58,9 +58,9 @@ export function setupEventCapture(state) {
   document.addEventListener("visibilitychange", () => record("visibilitychange", { visibilityState: document.visibilityState }));
 
   // Capture phase, so focus and pointerenter (which do not bubble) are seen too.
-  const controlKeyCodes = new Set();
+  const heldKeyClasses = new Map();
   INTERACTION_TYPES.forEach((type) => {
-    document.addEventListener(type, (event) => recordInteraction(state, event, controlKeyCodes), { capture: true, passive: true });
+    document.addEventListener(type, (event) => recordInteraction(state, event, heldKeyClasses), { capture: true, passive: true });
   });
 }
 
@@ -88,7 +88,7 @@ function recordPointerTrail(state, event) {
   while (interaction.trail.length && interaction.trail[0].t < t - PREMOVE_WINDOW_MS) interaction.trail.shift();
 }
 
-function recordInteraction(state, event, controlKeyCodes) {
+function recordInteraction(state, event, heldKeyClasses) {
   const interaction = state.interaction;
   if (interaction.endMs !== null) return;
   const element = event.target instanceof Element ? event.target.closest("[data-tells-target]") : null;
@@ -96,7 +96,7 @@ function recordInteraction(state, event, controlKeyCodes) {
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
   // The one exception is Enter or Space on Start, which is how a keyboard user starts the test; collect-interaction.js reads it only to tell the click apart.
-  const eventKeyClass = KEY_EVENT_TYPES.has(event.type) ? keyClassOf(controlKeyCodes, event) : null;
+  const eventKeyClass = KEY_EVENT_TYPES.has(event.type) ? keyClassOf(heldKeyClasses, event) : null;
   const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(eventKeyClass);
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null && !(target === "start" && activationKey)) return;
   // OS auto-repeat keydowns are ignored by buildTyping, so they are not recorded either; they would fill the buffer.
@@ -205,15 +205,16 @@ function keyClass(event) {
   return shortcut ? "control" : "printable";
 }
 
-// A keyup takes the class of its keydown when that was control: the modifier of a shortcut is often released
-// before its key, so the keyup alone would look like a typed key. controlKeyCodes holds the codes of keys held as control.
-function keyClassOf(controlKeyCodes, event) {
-  if (event.type === "keyup" && controlKeyCodes.delete(event.code)) return "control";
-  const value = keyClass(event);
-  if (event.type === "keydown") {
-    if (value === "control") controlKeyCodes.add(event.code);
-    else controlKeyCodes.delete(event.code);
+// A keyup takes the class of its own keydown: a modifier can go down or up while a key is held, so the keyup
+// alone could disagree with its keydown. heldKeyClasses maps the code of each held key to its keydown class.
+function keyClassOf(heldKeyClasses, event) {
+  if (event.type === "keyup" && heldKeyClasses.has(event.code)) {
+    const value = heldKeyClasses.get(event.code);
+    heldKeyClasses.delete(event.code);
+    return value;
   }
+  const value = keyClass(event);
+  if (event.type === "keydown" && !event.repeat) heldKeyClasses.set(event.code, value);
   return value;
 }
 
