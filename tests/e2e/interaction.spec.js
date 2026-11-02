@@ -168,6 +168,32 @@ test("a slower inspection started before Submit does not overwrite the verdict f
   await expect(page.locator("#runBtn")).toBeEnabled();
 });
 
+test("after a failed verdict, Run the inspection re-sends the test and the status line follows the new verdict", async ({ page }) => {
+  await openDrill(page);
+  const isCompleted = (response) => response.request().method() === "POST" && response.url().endsWith("/api/report")
+    && (response.request().postData() || "").includes('"completed":true');
+  let failNext = true;
+  await page.route("**/api/report", async (route) => {
+    if (failNext && (route.request().postData() || "").includes('"completed":true')) {
+      failNext = false;
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "forced" }) });
+      return;
+    }
+    await route.continue();
+  });
+  const status = page.locator("#challengeStatus");
+
+  const failed = page.waitForResponse(isCompleted);
+  await createKeyboardDriver(page).run();
+  expect((await failed).status()).toBe(500);
+  await expect(status).toHaveText("The verdict could not be scored. Press Run the inspection to send the interaction test again.");
+
+  const retried = page.waitForResponse(isCompleted);
+  await page.locator("#runBtn").click();
+  expect((await retried).status()).toBe(200);
+  await expect(status).toHaveText("Interaction test complete. The verdict is shown above.");
+});
+
 test("the phrase field stays disabled until Start, so nothing can be typed before the test is armed", async ({ page }) => {
   await openDrill(page);
   const field = page.locator(TARGET.phrase);

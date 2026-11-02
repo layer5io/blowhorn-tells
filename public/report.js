@@ -23,6 +23,7 @@ export async function runChecks(state) {
   runBtn.disabled = true;
   renderVoice(verdictVoice("pending"), "Collecting signals in this browser.");
   updateHeroReadout({ webdriver: "checking", verdict: "pending", behaviour: "sampling" });
+  showInteractionStatus(state, "Interaction test complete. Checking the verdict now.");
 
   try {
     const browser = await collectBrowser();
@@ -57,15 +58,23 @@ export async function runChecks(state) {
     renderReport(state, report);
     $("#copyBtn").disabled = false;
     $("#downloadBtn").disabled = false;
+    showInteractionStatus(state, "Interaction test complete. The verdict is shown above.");
     return true;
   } catch (error) {
     if (!isLatest()) return null;
     renderVoice(failureVoice(String(error && error.message ? error.message : error)));
     $("#jsonOut").textContent = String(error && error.stack ? error.stack : error);
+    showInteractionStatus(state, "The verdict could not be scored. Press Run the inspection to send the interaction test again.");
     return false;
   } finally {
     if (isLatest()) runBtn.disabled = false;
   }
+}
+
+// Every run, from Submit or from the Run button, carries the completed interaction test, so the
+// test's status line follows the newest run's outcome rather than only the run Submit started.
+function showInteractionStatus(state, text) {
+  if (state.interaction.report) $("#challengeStatus").textContent = text;
 }
 
 // The interaction report is always sent. Before Submit it describes an untaken test, which scores nothing.
