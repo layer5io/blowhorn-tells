@@ -49,6 +49,8 @@ async function runFamily(page, family, drive) {
 
   const response = await reported;
   const body = await response.json();
+  // Once the verdict is in, the status line says the test is done rather than still checking.
+  await expect(page.locator("#challengeStatus")).toHaveText("Interaction test complete. The verdict is shown above.");
   const interaction = await page.evaluate(() => window.__tellsInteraction);
   const statuses = Object.fromEntries((interaction?.checks || []).map((check) => [check.id, check.status]));
   const reasons = (body.verdict?.reasons || []).filter((reason) => reason.id.startsWith("int_"));

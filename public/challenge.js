@@ -64,6 +64,7 @@ export function setupChallenge(state, renderRuntime, runChecks) {
     renderRuntime(state);
     // Intentional: the checks run on their own after Submit, so the verdict needs no extra press.
     runChecks(state).then((scored) => {
+      if (scored === true) status.textContent = "Interaction test complete. The verdict is shown above.";
       if (scored === false) status.textContent = "The verdict could not be scored. Press Run the inspection to send the interaction test again.";
     });
   });
