@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { extname, isAbsolute, join, normalize, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../../../src/worker.js";
@@ -14,7 +14,10 @@ const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2"
 };
 
 const server = createServer(async (nodeRequest, nodeResponse) => {
@@ -51,11 +54,12 @@ function createWorkerEnv() {
   };
 }
 
+// Mirrors Workers Assets with its default html_handling, "auto-trailing-slash": "/dir/" serves
+// dir/index.html and "/dir" redirects to "/dir/", so the /checks/ and /agents/ pages load as in production.
 async function serveAsset(request) {
   const url = new URL(request.url);
-  const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
-  const decoded = decodeURIComponent(pathname);
-  const filePath = normalize(join(publicRoot, decoded));
+  const decoded = decodeURIComponent(url.pathname);
+  const filePath = normalize(join(publicRoot, decoded.endsWith("/") ? `${decoded}index.html` : decoded));
   const relativePath = relative(publicRoot, filePath);
 
   if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
@@ -69,8 +73,20 @@ async function serveAsset(request) {
         "content-type": CONTENT_TYPES[extname(filePath)] || "application/octet-stream"
       }
     });
-  } catch {
+  } catch (error) {
+    if (error?.code === "EISDIR" || (error?.code === "ENOENT" && !extname(decoded) && await isFile(join(filePath, "index.html")))) {
+      return new Response(null, { status: 307, headers: { location: `${url.pathname}/${url.search}` } });
+    }
+    if (error?.code !== "ENOENT") throw error;
     return new Response("Not found", { status: 404 });
+  }
+}
+
+async function isFile(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
   }
 }
 

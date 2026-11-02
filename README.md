@@ -58,6 +58,8 @@ Service Worker checks need a secure context; `localhost` counts as one in curren
 
 The card variants (`card-paper`, `card-dispatch`, `card-stamp`, `card-field`, `card-plain`) come from the shared stylesheet at `https://blowhorn.ai/assets/brand/cards.css`, which `public/index.html` links rather than copies. The dispatch card is near-black in both themes, so `public/styles.css` gives it the dark token set. The end-to-end tests stub that stylesheet so they never depend on the network.
 
+No two cards that sit next to each other share a variant. The result page's detail panels sit in a grid, one column and two above 900px. Their variants follow the markup order on a four-step cycle (stamp, field, plain, dispatch); adding or moving a panel means re-dealing the cycle from that point. `tests/e2e/card-neighbours.spec.js` checks the rendered layout of `/` and the `/checks/` and `/agents/` pages at 320, 820 and 1280px in both themes. The e2e test server (`tests/e2e/support/worker-server.js`) serves `dir/` as `dir/index.html`, as Workers Assets does.
+
 ## Deploy
 
 `master` deploys through `.github/workflows/deploy.yml` when the repository has `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. Without them the workflow says so and deploys nothing. The Worker serves the `tells.blowhorn.ai` custom domain (`wrangler.json`).

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCheckRows, buildVerdictGroupLines, describeUserAgent, REASON_PLAIN } from "../public/checks-view-model.js";
+import { buildCheckRows, buildVerdictGroupLines, describeUserAgent, REASON_PLAIN, reasonHeadline } from "../public/checks-view-model.js";
+import { INTERACTION_CHECK_IDS } from "../public/interaction-checks.js";
 import { buildWorkerConsistencyRows } from "../public/report-view-model.js";
 import Ajv2020 from "ajv/dist/2020.js";
 import { readFileSync } from "node:fs";
@@ -231,6 +232,12 @@ describe("Interaction row", () => {
     expect(scoredWith({ ...judged, checks: [] }).Interaction).toMatchObject({ status: "na", result: "not taken" });
   });
 
+  it("shows an unreadable interaction report as a warning, not as a test not taken", () => {
+    const row = scoredWith({ version: "not-a-report" })["Interaction"];
+    expect(row).toMatchObject({ status: "warn", summary: "Interaction report could not be read" });
+    expect(validateRow(row), JSON.stringify(validateRow.errors)).toBe(true);
+  });
+
   it("validates its row against the check-row schema in every state", () => {
     for (const interaction of [undefined, reportFrom(humanLike()), reportFrom(scriptedElementClick())]) {
       const row = scoredWith(interaction)["Interaction"];
@@ -276,10 +283,21 @@ describe("verdict card fields", () => {
   });
 
   it("has a plain phrase for every reason the scoring code can emit", () => {
-    const source = readFileSync(new URL("../src/report-verdict.js", import.meta.url), "utf8");
-    const ids = [...source.matchAll(/penalize\([^,]+, "([a-z_0-9]+)"/g)].map((match) => match[1]);
-    expect(ids.length).toBeGreaterThan(50);
-    for (const id of ids) expect(REASON_PLAIN, id).toHaveProperty([id]);
+    const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
+    // Three sources: penalize() calls in the verdict, the header reasons server-signals.js pushes
+    // (re-scored through penalize(points, reason.id, ...)), and the interaction check ids.
+    const scored = [...read("../src/report-verdict.js").matchAll(/penalize\([^,]+, "([a-z_0-9]+)"/g)].map((match) => match[1]);
+    const headers = [...read("../src/server-signals.js").matchAll(/reasons\.push\(\{ id: "([a-z_0-9]+)"/g)].map((match) => match[1]);
+    expect(scored.length).toBeGreaterThan(50);
+    expect(headers.length).toBeGreaterThanOrEqual(7);
+    for (const id of [...scored, ...headers, ...INTERACTION_CHECK_IDS]) expect(REASON_PLAIN, id).toHaveProperty([id]);
+  });
+
+  it("heads every Top signals entry with a plain phrase, falling back to the check name", () => {
+    expect(reasonHeadline("navigator_webdriver")).toBe("WebDriver detected");
+    expect(reasonHeadline("automation_user_agent")).toBe("Browser identity names an automation tool");
+    expect(reasonHeadline("not_a_known_reason")).toBe("Other finding");
+    for (const id of Object.keys(REASON_PLAIN)) expect(reasonHeadline(id), id).not.toMatch(/_/);
   });
 
   it("says in a sentence why a check did not run, and keeps the short reason as result", () => {
@@ -356,14 +374,14 @@ describe("verdict group lines", () => {
     expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "WebDriver detected" });
   });
 
-  it("counts several automation flags and lists them, later ones in lower case unless a name", () => {
+  it("lists several automation flags without a count, later ones in lower case unless a name", () => {
     const lines = lineFor([
       row("Browser data", "automation", "fail", "WebDriver detected"),
       row("Browser data 2", "automation", "fail", "Headless browser detected"),
       row("Remote-control tells", "automation", "warn", "WebDriver flag patched"),
       row("Managed bot score", "automation", "pass", "Cloudflare bot score is not low")
     ]);
-    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "3 flags: WebDriver detected, headless browser detected, WebDriver flag patched" });
+    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "WebDriver detected, headless browser detected, WebDriver flag patched" });
   });
 
   it("uses the first clean behaviour sentence when nothing is flagged, and the concern when something is", () => {
@@ -378,7 +396,7 @@ describe("verdict group lines", () => {
       row("Latency", "fingerprint", "pass", "Round-trip times look ordinary"),
       row("TLS fingerprint", "fingerprint", "na", "TLS fingerprint not available")
     ]);
-    expect(lines.fingerprint).toMatchObject({ status: "fail", sentence: "2 concerns: Timezone does not match the IP location, no WebGL graphics support" });
+    expect(lines.fingerprint).toMatchObject({ status: "fail", sentence: "Timezone does not match the IP location, no WebGL graphics support" });
     expect(lineFor([row("Latency", "fingerprint", "pass", "x")]).fingerprint.sentence).toBe("1 check agrees");
     expect(lineFor([row("Latency", "fingerprint", "pass", "x"), row("Request profile", "fingerprint", "pass", "y")]).fingerprint.sentence).toBe("All 2 checks agree");
   });

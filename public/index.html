@@ -68,11 +68,12 @@
         <p class="verdict-score"><span id="verdictScore">–</span><span class="verdict-of"> / 100</span></p>
         <div class="verdict-gauge" role="img" aria-label="Bot to human scale, from 0 to 100. Under 45 reads as a bot, 45 to 74 is hard to tell, 75 and up looks human.">
           <div class="verdict-track">
-            <span class="verdict-tick" style="left: 45%"></span>
-            <span class="verdict-tick" style="left: 75%"></span>
+            <span class="verdict-band verdict-band-bot"></span>
+            <span class="verdict-band verdict-band-unsure"></span>
+            <span class="verdict-band verdict-band-human"></span>
             <span id="verdictMarker" class="verdict-marker" hidden></span>
           </div>
-          <div class="verdict-ends"><span>Bot</span><span>Human</span></div>
+          <div class="verdict-bands"><span class="verdict-band-bot">Bot</span><span class="verdict-band-unsure">Unsure</span><span class="verdict-band-human">Human</span></div>
         </div>
         <p class="verdict-key">Higher is more human.</p>
         <div id="verdictGroups" class="verdict-groups">
@@ -97,7 +98,8 @@
       </div>
     </section>
 
-    <section class="panel" id="checks">
+    <!-- No card of its own: the three group cards inside are the cards here. -->
+    <section class="checks-section" id="checks">
       <h2>Checks performed</h2>
       <ul class="check-legend" aria-label="Status key">
         <li><span class="check-icon check-pass" aria-hidden="true">✓</span>Pass</li>
@@ -137,7 +139,14 @@
       <button id="expandAllBtn" class="button-secondary" type="button">Expand all</button>
       <button id="collapseAllBtn" class="button-secondary" type="button">Collapse all</button>
     </div>
-    <section class="masonry">
+    <!-- One column, two above 900px, filled row by row; above 900px Top signals spans the first row.
+         Variants follow the DOM order on a four-step cycle (stamp, field, plain, dispatch), so a card's
+         neighbours, one step away (beside it) and two steps away (above and below it), never share its
+         variant at either width. Top signals (stamp) sits above field and plain. The first and last cards
+         are not dispatch, so they differ from the dispatch cards above and below the grid. Adding,
+         removing or moving a panel means re-dealing the cycle from that point.
+         tests/e2e/card-neighbours.spec.js checks the rendered layout. -->
+    <section class="panel-grid">
       <details class="panel card card-stamp toggle-panel" id="panel-top-signals" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
@@ -145,14 +154,6 @@
           <small>The findings that moved the verdict</small>
         </summary>
         <div id="reasons" class="list muted">No report yet.</div>
-      </details>
-      <details class="panel card card-plain toggle-panel" id="panel-runtime" open>
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>Runtime</span>
-          <small>How this inspection ran</small>
-        </summary>
-        <div id="runtime" class="kv"></div>
       </details>
       <details class="panel card card-field toggle-panel" id="panel-server-ip" open>
         <summary>
@@ -162,6 +163,22 @@
         </summary>
         <div id="serverSummary" class="kv"></div>
       </details>
+      <details class="panel card card-plain toggle-panel" id="panel-network">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Network identity</span>
+          <small>IP owner and network class</small>
+        </summary>
+        <div id="networkIdentity" class="kv"></div>
+      </details>
+      <details class="panel card card-dispatch toggle-panel" id="panel-runtime" open>
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Runtime</span>
+          <small>How this inspection ran</small>
+        </summary>
+        <div id="runtime" class="kv"></div>
+      </details>
       <details class="panel card card-stamp toggle-panel" id="panel-browser" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
@@ -170,7 +187,7 @@
         </summary>
         <div id="browserSummary" class="kv"></div>
       </details>
-        <details class="panel card card-field toggle-panel" id="panel-behaviour" open>
+      <details class="panel card card-field toggle-panel" id="panel-behaviour" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Behaviour detail</span>
@@ -178,15 +195,7 @@
         </summary>
         <div id="behaviorSummary" class="kv"></div>
       </details>
-      <details class="panel card card-dispatch toggle-panel" id="panel-webrtc">
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>WebRTC comparison</span>
-          <small>The addresses WebRTC exposes</small>
-        </summary>
-        <div id="webrtcComparison" class="kv"></div>
-      </details>
-      <details class="panel card card-field toggle-panel" id="panel-consistency">
+      <details class="panel card card-plain toggle-panel" id="panel-consistency">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Consistency</span>
@@ -223,69 +232,69 @@
           </table>
         </div>
       </details>
-        <details class="panel card card-stamp toggle-panel" id="panel-network">
+      <details class="panel card card-dispatch toggle-panel" id="panel-webrtc">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
-          <span>Network identity</span>
-          <small>IP owner and network class</small>
+          <span>WebRTC comparison</span>
+          <small>The addresses WebRTC exposes</small>
         </summary>
-          <div id="networkIdentity" class="kv"></div>
-          </details>
-          <details class="panel card card-plain toggle-panel" id="panel-surfaces">
+        <div id="webrtcComparison" class="kv"></div>
+      </details>
+      <details class="panel card card-stamp toggle-panel" id="panel-surfaces">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Surface indicators</span>
           <small>APIs and settings that stand out</small>
         </summary>
-            <div id="surfaceSummary" class="kv"></div>
-          </details>
-          <details class="panel card card-field toggle-panel" id="panel-media">
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>Media / DRM</span>
-          <small>Media support and DRM modules</small>
-        </summary>
-            <div id="mediaDrmSummary" class="surface-grid muted">No report yet.</div>
-          </details>
-          <details class="panel card card-stamp toggle-panel" id="panel-memory">
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>Performance memory</span>
-          <small>Heap readings over the visit</small>
-        </summary>
-            <div id="memoryVisual" class="visual-block muted">No report yet.</div>
-          </details>
-          <details class="panel card card-dispatch toggle-panel" id="panel-sensors">
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>Sensors</span>
-          <small>Motion and orientation sensors</small>
-        </summary>
-            <div id="sensorVisual" class="visual-block muted">No report yet.</div>
-          </details>
-          <details class="panel card card-field toggle-panel" id="panel-resources">
-        <summary>
-          <span class="summary-icon" aria-hidden="true"></span>
-          <span>Resource timing</span>
-          <small>How the page's resources loaded</small>
-        </summary>
-            <div id="resourceTimeline" class="visual-block muted">No report yet.</div>
-          </details>
-          <details class="panel card card-stamp toggle-panel" id="panel-extensions">
+        <div id="surfaceSummary" class="kv"></div>
+      </details>
+      <details class="panel card card-field toggle-panel" id="panel-extensions">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Browser extensions</span>
           <small>Extensions this page could detect</small>
         </summary>
-            <div id="extensionProbeSummary" class="visual-block muted">No report yet.</div>
-          </details>
-          <details class="panel card card-plain toggle-panel" id="panel-voices">
+        <div id="extensionProbeSummary" class="visual-block muted">No report yet.</div>
+      </details>
+      <details class="panel card card-plain toggle-panel" id="panel-media">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Media / DRM</span>
+          <small>Media support and DRM modules</small>
+        </summary>
+        <div id="mediaDrmSummary" class="surface-grid muted">No report yet.</div>
+      </details>
+      <details class="panel card card-dispatch toggle-panel" id="panel-sensors">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Sensors</span>
+          <small>Motion and orientation sensors</small>
+        </summary>
+        <div id="sensorVisual" class="visual-block muted">No report yet.</div>
+      </details>
+      <details class="panel card card-stamp toggle-panel" id="panel-memory">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Performance memory</span>
+          <small>Heap readings over the visit</small>
+        </summary>
+        <div id="memoryVisual" class="visual-block muted">No report yet.</div>
+      </details>
+      <details class="panel card card-field toggle-panel" id="panel-resources">
+        <summary>
+          <span class="summary-icon" aria-hidden="true"></span>
+          <span>Resource timing</span>
+          <small>How the page's resources loaded</small>
+        </summary>
+        <div id="resourceTimeline" class="visual-block muted">No report yet.</div>
+      </details>
+      <details class="panel card card-plain toggle-panel" id="panel-voices">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Voices & policies</span>
           <small>Speech voices and document policies</small>
         </summary>
-            <div id="voicePolicySummary" class="visual-block muted">No report yet.</div>
+        <div id="voicePolicySummary" class="visual-block muted">No report yet.</div>
       </details>
     </section>
 

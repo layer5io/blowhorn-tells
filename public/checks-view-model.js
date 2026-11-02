@@ -238,7 +238,7 @@ const CHECKS = [
     group: "behavior",
     pass: "Typing and clicks look human",
     slug: "interaction",
-    reasons: INTERACTION_CHECK_IDS,
+    reasons: [...INTERACTION_CHECK_IDS, "interaction_report_invalid"],
     // A completed test whose checks are all not-judged has no evidence either, so it reads as not taken.
     available: ({ client }) => client?.interaction?.task?.completed === true && (client.interaction.checks || []).some((check) => check.status !== "na"),
     unavailable: () => na("not taken", "Interaction test not taken"),
@@ -262,14 +262,16 @@ export function buildCheckRows(report) {
 
   return CHECKS
     .map((check) => {
-      const available = check.available ? check.available(context) : true;
+      const matched = reasons
+        .filter((reason) => check.reasons.includes(reason.id))
+        .sort((a, b) => (SEVERITY_RANK[b.severity] || 0) - (SEVERITY_RANK[a.severity] || 0));
+      // A reason the server scored is evidence in itself: the row shows it even when the check's
+      // own data is missing or unreadable, so no penalty hides behind "not available".
+      const available = matched.length > 0 || (check.available ? check.available(context) : true);
       if (!available) {
         const missing = check.unavailable ? check.unavailable(context) : NOT_COLLECTED;
         return row(check, "na", missing.result, null, missing.summary);
       }
-      const matched = reasons
-        .filter((reason) => check.reasons.includes(reason.id))
-        .sort((a, b) => (SEVERITY_RANK[b.severity] || 0) - (SEVERITY_RANK[a.severity] || 0));
       const worst = matched[0];
       let status = !worst ? "pass" : worst.severity === "high" ? "fail" : "warn";
       let finding = worst ? `${worst.message}${matched.length > 1 ? ` (+${matched.length - 1} more)` : ""}` : null;
@@ -302,6 +304,13 @@ function row(check, status, result, finding, summary) {
 // stay in the finding; this is what a reader sees.
 export const REASON_PLAIN = {
   server_missing_ua: "No browser identity sent",
+  missing_user_agent: "No browser identity sent",
+  automation_user_agent: "Browser identity names an automation tool",
+  library_user_agent: "Browser identity is a code library, not a browser",
+  missing_accept: "Request is missing a header every browser sends",
+  missing_accept_language: "Request sent no language preference",
+  missing_client_hints: "Browser sent no client hints",
+  body_without_content_type: "Request body has no declared type",
   proxy_headers: "Extra proxy headers sent",
   datacenter_asn_heuristic: "Network belongs to a hosting provider",
   ip_tor: "Tor exit address",
@@ -366,6 +375,14 @@ export const REASON_PLAIN = {
   int_dwell: "Key hold times look scripted",
   int_task_speed: "Test finished unnaturally fast"
 };
+
+// The plain headline for a scored reason, as the Top signals list shows it: the phrase above, or the
+// name of the check that scores it. The raw id and the server message stay in the details.
+export function reasonHeadline(id) {
+  return REASON_PLAIN[id] || CHECKS.find((check) => check.reasons.includes(id))?.name || "Other finding";
+}
+
+export const SEVERITY_LABEL = { high: "High", medium: "Medium", low: "Low" };
 
 // What a check is about, used when a flagged reason has no phrase above.
 const CHECK_CONCERN = {
@@ -445,7 +462,8 @@ const STATUS_RANK = { fail: 3, warn: 2, pass: 1, na: 0 };
 
 // One line per group for the verdict card, derived from the same rows the checks list shows. The
 // sentence quotes row summaries only, so it is as plain as they are:
-//   "none found" / "WebDriver detected" / "2 flags: WebDriver detected, headless browser detected".
+//   "none found" / "WebDriver detected" / "WebDriver detected, headless browser detected". The list
+// itself says how many; a count would read "Automation flags: 2 flags: ...".
 // judged = rows that produced a result (not n/a); flagged = judged rows that failed or warned.
 export function buildVerdictGroupLines(rows) {
   return CHECK_GROUPS.map(({ key, label }) => {
@@ -465,12 +483,9 @@ export function buildVerdictGroupLines(rows) {
   });
 }
 
-const GROUP_FLAG_NOUN = { automation: "flags", behavior: "concerns", fingerprint: "concerns" };
-
 function groupSentence(key, judged, flagged) {
   if (!judged.length) return "Not checked in this run";
-  if (flagged.length === 1) return flagged[0].summary;
-  if (flagged.length > 1) return `${flagged.length} ${GROUP_FLAG_NOUN[key]}: ${listSummaries(flagged)}`;
+  if (flagged.length) return listSummaries(flagged);
   if (key === "automation") return "none found";
   if (key === "fingerprint") return judged.length === 1 ? "1 check agrees" : `All ${judged.length} checks agree`;
   // Behavior: the first clean result, which says what was judged ("Pointer and key timing look human").

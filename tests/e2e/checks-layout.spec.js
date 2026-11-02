@@ -1,14 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { stubSharedCards } from "./support/cards.js";
 
 const STATUS_LABELS = ["Pass", "Warning", "Fail", "Not available"];
 const GROUP_TITLES = ["Automation flags", "Behavior", "Fingerprint consistency"];
 const RAW_API = /navigator\.|window\.|document\.|performance\.|Function\.|isTrusted|\.prototype|webdriver:/;
 
-// The shared card variants load from blowhorn.ai. The suite stays hermetic: the request gets an
-// empty stylesheet, and the one test that needs a variant's fill sets it itself.
-test.beforeEach(async ({ page }) => {
-  await page.route("https://blowhorn.ai/assets/brand/cards.css", (route) => route.fulfill({ status: 200, contentType: "text/css", body: "" }));
-});
+// cards.css is stubbed (support/cards.js); the one test that needs a variant's fill sets it itself.
+test.beforeEach(async ({ page }) => stubSharedCards(page));
 
 // WCAG contrast of each element's text colour against the first opaque background behind it.
 function contrastOf(selectors) {

@@ -569,47 +569,52 @@ h3 {
 
 .verdict-gauge { margin-bottom: 8px; }
 
+/* Three flat bands, one per verdict, sized to the score cut-offs (under 45 bot, 45 to 74 unsure,
+   75 and up human; src/report-verdict.js). Fills are the status colours at full strength, 3:1 or
+   better on every surface; the labels under them use the text tokens. The marker rides on top,
+   ringed in the page colour so it stands out from any band. */
+.verdict-track,
+.verdict-bands {
+  display: grid;
+  grid-template-columns: 45fr 30fr 25fr;
+  column-gap: 3px;
+}
+
 .verdict-track {
   position: relative;
   height: 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  background: linear-gradient(90deg,
-    color-mix(in srgb, var(--bad) 40%, transparent),
-    color-mix(in srgb, var(--warn) 40%, transparent) 50%,
-    color-mix(in srgb, var(--good) 50%, transparent));
 }
 
-.verdict-tick {
-  position: absolute;
-  top: -5px;
-  bottom: -5px;
-  width: 1px;
-  background: var(--ink-muted);
-}
+.verdict-band:first-child { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.verdict-band:nth-child(3) { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.verdict-track .verdict-band-bot { background: var(--bad); }
+.verdict-track .verdict-band-unsure { background: var(--warn); }
+.verdict-track .verdict-band-human { background: var(--good); }
 
 .verdict-marker {
   position: absolute;
   top: 50%;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
-  border: 2px solid var(--surface-deep);
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 3px solid var(--surface-deep);
   border-radius: 50%;
   background: var(--ink);
   transition: left 220ms ease;
 }
 
-.verdict-ends {
-  display: flex;
-  justify-content: space-between;
+.verdict-bands {
   margin-top: 6px;
-  color: var(--ink-muted);
   font-family: var(--mono);
   font-size: 0.72rem;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.verdict-bands .verdict-band-bot { color: var(--bad); }
+.verdict-bands .verdict-band-unsure { color: var(--warn-ink); text-align: center; }
+.verdict-bands .verdict-band-human { color: var(--good); text-align: right; }
 
 .verdict-key {
   margin: 10px 0 0;
@@ -767,16 +772,25 @@ main { padding-bottom: 60px; }
   font-size: 0.85rem;
 }
 
-.masonry {
-  columns: 2 360px;
-  column-gap: 24px;
+/* The detail panels: a grid filled row by row, one column and two above 900px (Top signals spans
+   both). Rows keep every card's neighbours fixed (beside it in the row, above and below it in the
+   column) whatever each card's height, so the variant cycle in index.html holds. */
+.panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.masonry > .panel {
-  display: inline-block;
-  width: 100%;
-  margin: 0 0 24px;
-  break-inside: avoid;
+.panel-grid > .panel { min-width: 0; margin: 0; }
+
+@media (min-width: 901px) {
+  .panel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Top signals is the longest panel: it takes the full first row and lays its findings out in two
+     columns, so no short card sits beside a tall one. */
+  .panel-grid > #panel-top-signals { grid-column: 1 / -1; }
+  #panel-top-signals .list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 
 .muted { color: var(--muted); }
@@ -795,18 +809,46 @@ main { padding-bottom: 60px; }
   padding: 10px 12px;
 }
 
-.reason strong {
-  display: block;
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: 0.82rem;
+.reason-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  margin: 0;
 }
 
-.reason span {
-  display: block;
+.reason-title {
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.reason-weight {
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+.reason-more summary {
   margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--link);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reason-more p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+.reason-id code {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.8rem;
 }
 
 .reason-evidence {
@@ -1164,7 +1206,7 @@ pre {
   word-break: break-word;
 }
 
-.toggle-panel summary {
+.toggle-panel > summary {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   gap: 2px 10px;
@@ -1176,7 +1218,7 @@ pre {
   list-style: none;
 }
 
-.toggle-panel summary::-webkit-details-marker {
+.toggle-panel > summary::-webkit-details-marker {
   display: none;
 }
 
@@ -1200,11 +1242,11 @@ pre {
   line-height: 1;
 }
 
-.toggle-panel[open] .summary-icon::before {
+.toggle-panel[open] > summary .summary-icon::before {
   content: "-";
 }
 
-.toggle-panel summary small {
+.toggle-panel > summary small {
   grid-column: 2;
   color: var(--muted);
   font-size: 0.78rem;
@@ -1212,7 +1254,7 @@ pre {
   text-transform: none;
 }
 
-.toggle-panel[open] summary {
+.toggle-panel[open] > summary {
   margin-bottom: 14px;
 }
 
@@ -1291,8 +1333,6 @@ input[type="checkbox"] {
   .actions { order: 2; }
 
   .grid.two { grid-template-columns: 1fr; }
-
-  .masonry { columns: 1; }
 }
 
 @media (max-width: 640px) {
@@ -1329,6 +1369,9 @@ input[type="checkbox"] {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Checks performed has no card of its own: the heading and key sit on the page, the groups are the cards. */
+.checks-section { margin-bottom: 24px; }
 
 .check-legend {
   display: flex;

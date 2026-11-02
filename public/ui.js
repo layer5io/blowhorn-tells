@@ -7,7 +7,7 @@ import {
   buildWebRtcComparison,
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
-import { buildCheckRows, buildVerdictGroupLines, CHECK_GROUPS } from "./checks-view-model.js";
+import { buildCheckRows, buildVerdictGroupLines, CHECK_GROUPS, reasonHeadline, SEVERITY_LABEL } from "./checks-view-model.js";
 import { computeBehavior, interactionCompleted } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
@@ -37,6 +37,8 @@ export function renderReport(state, report, options = {}) {
   }
 }
 
+// Each signal leads with its plain headline and its weight. The raw reason id, the server's message
+// and the evidence are in the details, like the checks list.
 function renderReasons(reasons, report) {
   const el = $("#reasons");
   if (!reasons.length) {
@@ -45,9 +47,16 @@ function renderReasons(reasons, report) {
   }
   el.innerHTML = reasons.slice(0, 12).map((reason) => `
     <div class="reason">
-      <strong>${escapeHtml(reason.id)} &middot; ${escapeHtml(reason.severity)} &middot; -${escapeHtml(String(reason.points))}</strong>
-      <span>${escapeHtml(reason.message)}</span>
-      ${renderReasonEvidence(reason, report)}
+      <p class="reason-head">
+        <strong class="reason-title">${escapeHtml(reasonHeadline(reason.id))}</strong>
+        <span class="reason-weight">${escapeHtml(SEVERITY_LABEL[reason.severity] || reason.severity)} &middot; -${escapeHtml(String(reason.points))}</span>
+      </p>
+      <details class="reason-more">
+        <summary>Details</summary>
+        <p class="reason-id"><code>${escapeHtml(reason.id)}</code></p>
+        <p class="reason-message">${escapeHtml(reason.message)}</p>
+        ${renderReasonEvidence(reason, report)}
+      </details>
     </div>
   `).join("");
 }
