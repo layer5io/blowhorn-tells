@@ -46,6 +46,12 @@ describe("interaction report validator", () => {
     expect(validateInteractionReport({ ...validReport(), schemaVersion: 1 })).toBe(false);
   });
 
+  it("rejects a typing.counts with its fields missing, so a tampered report cannot turn the trusted check into a pass", () => {
+    const emptyCounts = validReport();
+    emptyCounts.typing.counts = {};
+    expect(validateInteractionReport(emptyCounts)).toBe(false);
+  });
+
   it("rejects a missing section", () => {
     const { typing, ...rest } = validReport();
     expect(validateInteractionReport(rest)).toBe(false);

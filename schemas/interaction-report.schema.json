@@ -67,18 +67,19 @@
     "typing": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["counts", "untrusted", "inputTypes"],
+      "required": ["counts", "untrusted", "inputTypes", "inputWithoutKeydown"],
       "properties": {
         "counts": {
           "type": "object",
           "additionalProperties": false,
+          "required": ["keydown", "keypress", "beforeinput", "input", "keyup", "paste"],
           "properties": {
-            "keydown": { "type": "integer" },
-            "keypress": { "type": "integer" },
-            "beforeinput": { "type": "integer" },
-            "input": { "type": "integer" },
-            "keyup": { "type": "integer" },
-            "paste": { "type": "integer" }
+            "keydown": { "type": "integer", "minimum": 0 },
+            "keypress": { "type": "integer", "minimum": 0 },
+            "beforeinput": { "type": "integer", "minimum": 0 },
+            "input": { "type": "integer", "minimum": 0 },
+            "keyup": { "type": "integer", "minimum": 0 },
+            "paste": { "type": "integer", "minimum": 0 }
           }
         },
         "untrusted": { "type": "integer", "minimum": 0 },
