@@ -75,6 +75,18 @@ describe("buildInteractionReport", () => {
     expect(statuses.int_centre).toBe("fail");
   });
 
+  it("times a touch tap from pointerdown to pointerup and accepts its mouse events after pointerup", () => {
+    const tap = (target, t) => clickEvents({ target, t, pointerType: "touch", dx: 3.1, dy: -2.4, screenDx: 0, screenDy: 56, pressMs: 92 });
+    const events = [...tap("start", FIXTURE_START_MS), ...tap("submit", FIXTURE_START_MS + 2400)];
+    const report = buildInteractionReport(events, task(events));
+    expect(report.click.clicks.map((click) => [click.pointerType, click.pressMs])).toEqual([["touch", 92], ["touch", 92]]);
+    expect(report.click.clicks[0].chain).toEqual(["pointerover", "pointerdown", "pointerup", "mousedown", "focus", "mouseup", "click"]);
+    const statuses = statusesOf(report);
+    expect(statuses.int_press).toBe("pass");
+    expect(statuses.int_click_chain).toBe("pass");
+    expect(statuses.int_premove).toBe("na");
+  });
+
   it("fails premove when a press has no pointer movement at all in the second before it", () => {
     const start = clickEvents({ t: FIXTURE_START_MS, pressMs: 2, premove: { samples: 0, pathPx: 0, coalescedMin: null } });
     const submit = clickEvents({ target: "submit", t: FIXTURE_START_MS + 900, pressMs: 2, premove: { samples: 0, pathPx: 0, coalescedMin: null } });

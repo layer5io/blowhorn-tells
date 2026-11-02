@@ -136,3 +136,32 @@ test("keyboard-only Start and Submit are recorded as keyboard activations and no
   expect(failed(row).filter((id) => clickChecks.includes(id))).toEqual([]);
   expectWorkerAgreesWithPage(row);
 });
+
+test("a slower inspection started before Submit does not overwrite the verdict for the completed test", async ({ page }) => {
+  await openDrill(page);
+  let releaseOlder;
+  const olderHeld = new Promise((resolve) => { releaseOlder = resolve; });
+  await page.route("**/api/report", async (route) => {
+    if (!(route.request().postData() || "").includes('"completed":true')) await olderHeld;
+    await route.continue();
+  });
+  const isReport = (completed) => (item) => item.method() === "POST" && item.url().endsWith("/api/report")
+    && (item.postData() || "").includes('"completed":true') === completed;
+  const olderRequest = page.waitForRequest(isReport(false));
+  const olderResponse = page.waitForResponse((response) => isReport(false)(response.request()));
+  const completedResponse = page.waitForResponse((response) => isReport(true)(response.request()));
+
+  await page.locator("#runBtn").click();
+  await olderRequest;
+  await createKeyboardDriver(page).run();
+  await completedResponse;
+  const reported = async () => JSON.parse(await page.locator("#jsonOut").textContent()).client.interaction.task.completed;
+  await expect.poll(reported).toBe(true);
+
+  releaseOlder();
+  await (await olderResponse).finished();
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 250)));
+  expect(await reported()).toBe(true);
+  await expect(page.locator("#coverageTable tbody tr", { hasText: "Interaction" })).not.toContainText("not taken");
+  await expect(page.locator("#runBtn")).toBeEnabled();
+});

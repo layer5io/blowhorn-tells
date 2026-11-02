@@ -1249,21 +1249,6 @@ pre {
   font-weight: 760;
 }
 
-legend {
-  color: var(--ink);
-  font-weight: 700;
-  padding: 0 6px;
-}
-
-.choice,
-.choice {
-  min-height: 44px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-deep) 72%, transparent);
-  padding: 10px 12px;
-}
-
 input {
   width: 100%;
   border: 1px solid var(--border);
@@ -1281,17 +1266,6 @@ input:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-input[type="checkbox"],
-input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 auto;
-}
-
-input[type="checkbox"] {
-  border-radius: 4px;
-}
-
 .hidden { display: none; }
 
 @media (max-width: 900px) {
@@ -1300,7 +1274,6 @@ input[type="checkbox"] {
     min-height: 0;
     padding-top: 26px;
   }
-
 
   .hero-visual { order: 3; max-width: 520px; }
 
@@ -1342,7 +1315,6 @@ input[type="checkbox"] {
 
   .actions button { flex: 1 1 140px; }
   .actions > button:first-child { flex-basis: 100%; }
-
 
   .kv { grid-template-columns: 1fr; }
 

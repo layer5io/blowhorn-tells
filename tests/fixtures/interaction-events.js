@@ -19,6 +19,7 @@ function between(random, min, max) {
 }
 
 // One button press: optional pointerover, pointerdown, mousedown, focus, pointerup, mouseup, click.
+// A touch tap fires its compatibility mouse events together after pointerup, as browsers do.
 export function clickEvents({
   target = "start",
   t,
@@ -39,12 +40,19 @@ export function clickEvents({
   if (pointerEvents) {
     events.push(base("pointerover", -60, { ...position, pointerType }));
     events.push(base("pointerdown", 0, { ...position, pointerType, detail: 1, premoveSamples: premove.samples, premovePathPx: premove.pathPx, coalescedMin: premove.coalescedMin }));
-    events.push(base("mousedown", 0, { ...position, detail: 1 }));
   }
-  events.push(base("focus", 0));
-  if (pointerEvents) {
+  if (pointerEvents && pointerType === "touch") {
     events.push(base("pointerup", pressMs, { ...position, pointerType }));
+    events.push(base("mousedown", pressMs, { ...position, detail: 1 }));
+    events.push(base("focus", pressMs));
     events.push(base("mouseup", pressMs, { ...position, detail: 1 }));
+  } else {
+    if (pointerEvents) events.push(base("mousedown", 0, { ...position, detail: 1 }));
+    events.push(base("focus", 0));
+    if (pointerEvents) {
+      events.push(base("pointerup", pressMs, { ...position, pointerType }));
+      events.push(base("mouseup", pressMs, { ...position, detail: 1 }));
+    }
   }
   events.push(base("click", pressMs + 1, { ...position, detail }));
   return events;

@@ -254,6 +254,37 @@ describe("recordInteraction", () => {
     expect(statuses.int_press).toBe("na");
   });
 
+  it("records a Ctrl+V or Cmd+V paste as a shortcut, not a typed key, so dwell and the key chain are not judged", () => {
+    for (const modifier of [{ key: "Control", flag: "ctrlKey", keyup: true }, { key: "Meta", flag: "metaKey", keyup: false }]) {
+      const { state, dispatch } = pageWithCapture();
+      state.interaction.startMs = 1;
+      dispatch("keydown", "phrase", { key: modifier.key, repeat: false, [modifier.flag]: true });
+      dispatch("keydown", "phrase", { key: "v", repeat: false, [modifier.flag]: true });
+      dispatch("paste", "phrase");
+      dispatch("beforeinput", "phrase", { inputType: "insertFromPaste" });
+      dispatch("input", "phrase", { inputType: "insertFromPaste" });
+      // macOS sends no keyup for a key pressed while Cmd is held.
+      if (modifier.keyup) dispatch("keyup", "phrase", { key: "v", repeat: false, [modifier.flag]: true });
+      dispatch("keyup", "phrase", { key: modifier.key, repeat: false });
+
+      const report = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: true, valueMatches: true, valueSetterNative: true, fullscreen: false });
+      expect(report.typing.counts, modifier.key).toMatchObject({ keydown: 0, keyup: 0, paste: 1 });
+      const statuses = Object.fromEntries(report.checks.map((check) => [check.id, check.status]));
+      expect(statuses.int_dwell, modifier.key).toBe("na");
+      expect(statuses.int_key_chain, modifier.key).toBe("na");
+    }
+  });
+
+  it("records a character typed with AltGr as a typed key, though AltGr sets ctrlKey", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 1;
+    const altGr = { ctrlKey: true, altKey: true, getModifierState: (name) => name === "AltGraph" };
+    dispatch("keydown", "phrase", { key: "@", repeat: false, ...altGr });
+    dispatch("keydown", "phrase", { key: "a", repeat: false, ctrlKey: true });
+
+    expect(state.interaction.events.map((event) => event.keyClass)).toEqual(["printable", "control"]);
+  });
+
   it("counts an event it has to drop when the buffer is full and nothing can be evicted", () => {
     const { state, dispatch } = pageWithCapture();
     state.interaction.startMs = 0;
