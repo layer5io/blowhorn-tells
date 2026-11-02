@@ -26,6 +26,11 @@ export function setupChallenge(state, renderRuntime, runChecks) {
       status.textContent = "Press Start first.";
       return;
     }
+    // Lost events leave a hole in the chains, so the run is not scored at all. Reloading starts a clean buffer.
+    if (state.interaction.dropped > 0) {
+      status.textContent = "Too many events were recorded to score this run. Reload the page and try again.";
+      return;
+    }
     const facts = readFieldFacts(field);
     if (!facts.valueMatches) {
       discardSubmitAttempt(state);
@@ -50,11 +55,13 @@ export function setupChallenge(state, renderRuntime, runChecks) {
     }
 
     state.interaction.report = report;
+    // Kept for external harnesses (an external Rust runner reads it). Remove it only once a replacement read path exists.
     window.__tellsInteraction = report;
     field.disabled = true;
     submitButton.disabled = true;
     status.textContent = "Interaction test complete. Checking the verdict now.";
     renderRuntime(state);
+    // Intentional: the checks run on their own after Submit, so the verdict needs no extra press.
     runChecks(state).then((scored) => {
       if (!scored) status.textContent = "The verdict could not be scored. Press Run the inspection to send the interaction test again.";
     });

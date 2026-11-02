@@ -23,7 +23,7 @@ export function renderReport(state, report, options = {}) {
   scoreCard.innerHTML = verdict.score == null ? escapeHtml(voice.label) : `${escapeHtml(String(verdict.score))}<small>${escapeHtml(voice.label)}</small>`;
   renderVoice(voice, `Risk: ${verdict.risk || "unknown"}.`);
 
-  renderReasons(verdict.reasons || []);
+  renderReasons(verdict.reasons || [], report);
   renderChecks(report);
   renderServerSummary(report.server || {});
   renderBrowserSummary(state, report.client || {});
@@ -40,7 +40,7 @@ export function renderReport(state, report, options = {}) {
   }
 }
 
-function renderReasons(reasons) {
+function renderReasons(reasons, report) {
   const el = $("#reasons");
   if (!reasons.length) {
     el.innerHTML = `<div class="muted">All quiet. No tells in this report.</div>`;
@@ -50,13 +50,13 @@ function renderReasons(reasons) {
     <div class="reason">
       <strong>${escapeHtml(reason.id)} &middot; ${escapeHtml(reason.severity)} &middot; -${escapeHtml(String(reason.points))}</strong>
       <span>${escapeHtml(reason.message)}</span>
-      ${renderReasonEvidence(reason)}
+      ${renderReasonEvidence(reason, report)}
     </div>
   `).join("");
 }
 
-function renderReasonEvidence(reason) {
-  const evidence = buildReasonEvidence(reason);
+function renderReasonEvidence(reason, report) {
+  const evidence = buildReasonEvidence(reason, report);
   if (!evidence.length) return "";
   return `
     <dl class="reason-evidence">

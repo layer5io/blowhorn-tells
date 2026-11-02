@@ -34,8 +34,7 @@ const sampleReport = {
           pointerMoveSamples: 0,
           pointerDistance: 0,
           pointerSpeedStdDev: 0,
-          rafStdDev: 0.321,
-          challengeCompleted: false
+          rafStdDev: 0.321
         }
       }
     ]
@@ -131,8 +130,7 @@ const sampleReport = {
         pointerMoveSamples: 8,
         pointerDistance: 353,
         pointerSpeedStdDev: 0.65,
-        rafStdDev: 0.306,
-        challengeCompleted: false
+        rafStdDev: 0.306
       }
     }
   }
@@ -195,6 +193,16 @@ describe("report view model", () => {
       "Verdict sample": "2500 ms",
       Events: "scroll:353 pointermove:8"
     });
+  });
+
+  it("reads the interaction test's completion from the interaction report, in the summary and the reason evidence", () => {
+    const taken = { ...sampleReport, client: { ...sampleReport.client, interaction: { task: { completed: true } } } };
+    const borderline = sampleReport.verdict.reasons[1];
+
+    expect(buildBehaviorSummary(sampleReport)["Interaction test"]).toBe("not complete");
+    expect(buildBehaviorSummary(taken)["Interaction test"]).toBe("complete");
+    expect(buildReasonEvidence(borderline, taken)).toContainEqual({ label: "Interaction test", value: "complete", tone: "neutral" });
+    expect(buildReasonEvidence(borderline, sampleReport)).toContainEqual({ label: "Interaction test", value: "not complete", tone: "neutral" });
   });
 
   it("builds cross-context rows and flags value drift", () => {

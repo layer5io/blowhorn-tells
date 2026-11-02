@@ -22,6 +22,7 @@ function allFailingReport() {
       clicks: [{
         target: "start",
         isTrusted: true,
+        activation: "pointer",
         pointerType: "mouse",
         chain: ["focus", "click"],
         detail: 0,
@@ -103,16 +104,38 @@ describe("interaction scoring in the Worker", () => {
     expect(interactionReasons(scoreWith(abandoned))).toEqual([]);
   });
 
-  it("cannot make a verdict bot on its own: 12 raw fails and one warn take 37 points and leave it suspicious", () => {
+  it("cannot make a verdict bot on its own: 11 raw fails and two warns take 35 points and leave it suspicious", () => {
     const report = allFailingReport();
     expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
     const verdict = scoreWith(report);
     const reasons = interactionReasons(verdict);
     expect(reasons).toHaveLength(13);
-    // int_screen_coords is a warn now (screen and client coordinates equal), so it costs 1 point at low severity.
-    expect(reasons.find((reason) => reason.id === "int_screen_coords").severity).toBe("low");
-    expect(new Set(reasons.filter((reason) => reason.id !== "int_screen_coords").map((reason) => reason.severity))).toEqual(new Set(["medium"]));
-    expect(verdict.score).toBe(63);
+    // int_screen_coords (equal coordinates) and int_coalesced (no coalesced events) are warns, so each costs 1 point at low severity.
+    const warns = ["int_screen_coords", "int_coalesced"];
+    for (const id of warns) expect(reasons.find((reason) => reason.id === id).severity).toBe("low");
+    expect(new Set(reasons.filter((reason) => !warns.includes(reason.id)).map((reason) => reason.severity))).toEqual(new Set(["medium"]));
+    expect(verdict.score).toBe(65);
     expect(verdict.classification).toBe("suspicious");
+  });
+
+  it("scores a synthetic-input run's script-made events once: synthetic_input carries the penalty and int_trusted only shows its status", () => {
+    const { events, task } = scriptedElementClick();
+    const interaction = buildInteractionReport(events, task);
+    const client = { tells: { input: { count: 3, untrusted: 3, trustedWhileHidden: 0, trustedWithoutFocus: 0 } }, interaction };
+
+    const verdict = scoreReport({ server, client });
+    const ids = verdict.reasons.map((reason) => reason.id);
+    expect(ids.filter((id) => id === "synthetic_input")).toHaveLength(1);
+    expect(ids).not.toContain("int_trusted");
+    expect(ids).toEqual(expect.arrayContaining(["int_value_source", "int_click_chain"]));
+
+    const shown = withValidInteraction(client).interaction.checks.find((check) => check.id === "int_trusted");
+    expect(shown.status).toBe("fail");
+
+    // The same run with no remote-control tell still gets the int_trusted penalty, so only the duplicate is removed.
+    const withoutTell = scoreReport({ server, client: { interaction } });
+    expect(interactionReasons(withoutTell).map((reason) => reason.id)).toContain("int_trusted");
+    // The tell swaps int_trusted's 3-point penalty for synthetic_input's 30, so the score is 27 points lower.
+    expect(verdict.score).toBe(withoutTell.score - 27);
   });
 });

@@ -91,6 +91,21 @@ export function createPlaywrightDriver(page) {
   };
 }
 
+// D: keyboard only. Focus Start, press Enter, Tab to the field and type, Tab to Submit and press Space.
+// No pointer event reaches either button, so the click checks see keyboard activations.
+export function createKeyboardDriver(page) {
+  return {
+    async run() {
+      await page.locator(TARGET.start).focus();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Tab");
+      await page.keyboard.type(PHRASE);
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Space");
+    }
+  };
+}
+
 // Presses at the exact centre with no mouseMoved first, as a raw CDP tool sends them.
 // clickCount is 1: Chromium fires no click event at all for clickCount 0 (see the
 // clickCount test in interaction.spec.js), so a clickCount 0 run cannot complete the task.

@@ -172,6 +172,25 @@ export function cdpPerKeyExactTiming() {
   const events = [...start, ...typed.events, ...submit];
   return { events, task: task(events, { valueMatches: true, valueSetterNative: true }) };
 }
+// A keyboard activation: focus, then Enter or Space on the button, then a click with detail 0 and no pointer
+// events. Enter clicks on keydown; Space clicks on keyup. Trusted, as a real keyboard produces.
+export function keyboardActivation({ target, t, key, trusted = true }) {
+  const base = (type, time, extra = {}) => ({ type, t: time, target, isTrusted: trusted, ...extra });
+  const keyClass = key === " " ? "space" : "enter";
+  const events = [base("focus", t - 40), base("keydown", t, { keyClass, repeat: false })];
+  if (keyClass === "space") events.push(base("keyup", t + 60, { keyClass, repeat: false }));
+  events.push(base("click", keyClass === "space" ? t + 61 : t + 1, { detail: 0 }));
+  return events;
+}
 
+// Start and Submit both activated from the keyboard, with the phrase typed in between. Every check that
+// needs a pointer should be not judged, and the key checks should pass.
+export function keyboardRun() {
+  const start = keyboardActivation({ target: "start", t: START_MS, key: "Enter" });
+  const typed = typedPhrase({ startT: START_MS + 900, dwell: () => 90, gap: () => 120 });
+  const submit = keyboardActivation({ target: "submit", t: typed.endT + 700, key: " " });
+  const events = [...start, ...typed.events, ...submit];
+  return { events, task: task(events, { valueMatches: true, valueSetterNative: true }) };
+}
 
 export const FIXTURE_START_MS = START_MS;

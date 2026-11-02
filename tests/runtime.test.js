@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { computeBehavior, discardSubmitAttempt, pressPremove } from "../public/runtime.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { createInitialState } from "../public/state.js";
+import { buildInteractionReport } from "../public/collect-interaction.js";
+import { computeBehavior, discardSubmitAttempt, pressPremove, setupEventCapture } from "../public/runtime.js";
+import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
 
 function makeState(overrides = {}) {
   return {
@@ -20,9 +23,9 @@ describe("computeBehavior", () => {
       elapsedMs: 5000,
       eventCounts: {},
       pointerMoveSamples: 0,
-      pointerDistance: 0,
-      challengeCompleted: false
+      pointerDistance: 0
     });
+    expect(behavior.summary).not.toHaveProperty("challengeCompleted");
   });
 
   it("scores varied interaction evidence higher", () => {
@@ -51,7 +54,16 @@ describe("computeBehavior", () => {
       scroll: 1
     });
     expect(behavior.summary.pointerDistance).toBeGreaterThan(190);
-    expect(behavior.summary.challengeCompleted).toBe(true);
+  });
+
+  it("adds the interaction score for a completed test, and leaves the summary without a completion flag", () => {
+    // Only a keydown and time passed, so the score sits well below 1 and the 0.16 is not clipped.
+    const events = [{ type: "keydown", t: 620 }];
+    const open = computeBehavior(makeState({ events }), 5000);
+    const completed = computeBehavior(makeState({ events, interaction: { startMs: 50, report: { task: { completed: true } } } }), 5000);
+
+    expect(completed.score - open.score).toBeCloseTo(0.16, 2);
+    expect(completed.summary).not.toHaveProperty("challengeCompleted");
   });
 
   it("returns only the most recent thirty events", () => {
@@ -155,5 +167,102 @@ describe("discardSubmitAttempt", () => {
     discardSubmitAttempt(state);
 
     expect(state.interaction.events).toEqual(startClick);
+  });
+});
+
+// setupEventCapture listens on window and document. These tests stand in for both with plain objects,
+// and call the document listeners directly with the events they need.
+class FakeElement {
+  constructor(target) {
+    this.dataset = { tellsTarget: target };
+  }
+
+  closest() {
+    return this;
+  }
+
+  getBoundingClientRect() {
+    return { left: 0, top: 0, right: 100, bottom: 40, width: 100, height: 40 };
+  }
+}
+
+function pageWithCapture() {
+  const listeners = {};
+  globalThis.window = { addEventListener() {}, scrollX: 0, scrollY: 0 };
+  globalThis.document = { addEventListener: (type, handler) => { listeners[type] = handler; }, hidden: false, hasFocus: () => true };
+  globalThis.Element = FakeElement;
+  const state = createInitialState({ now: () => 0 });
+  setupEventCapture(state);
+  const dispatch = (type, target, extra = {}) => listeners[type]({ type, target: new FakeElement(target), isTrusted: true, ...extra });
+  return { state, dispatch };
+}
+
+describe("recordInteraction", () => {
+  afterEach(() => {
+    delete globalThis.window;
+    delete globalThis.document;
+    delete globalThis.Element;
+  });
+
+  it("records Enter or Space on Start before the test starts, for keyboard activation only", () => {
+    const { state, dispatch } = pageWithCapture();
+    dispatch("keydown", "start", { key: "Enter", repeat: false });
+    dispatch("keyup", "start", { key: " ", repeat: false });
+    dispatch("keydown", "start", { key: "a", repeat: false });
+    dispatch("keydown", "phrase", { key: "a", repeat: false });
+
+    expect(state.interaction.events.map((event) => [event.type, event.target, event.keyClass])).toEqual([
+      ["keydown", "start", "enter"],
+      ["keyup", "start", "space"]
+    ]);
+  });
+
+  it("builds a keyboard-only run into keyboard activations that pass every check that does not need a pointer", () => {
+    const { state, dispatch } = pageWithCapture();
+    // Tab to Start, Enter: the page records the focus, the key and the click before challenge.js sets startMs.
+    dispatch("focus", "start");
+    dispatch("keydown", "start", { key: "Enter", repeat: false });
+    dispatch("click", "start", { detail: 0, clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+    state.interaction.startMs = 1;
+    // Tab to the phrase field and type one key, then Tab to Submit and press Space.
+    dispatch("keydown", "phrase", { key: "t", repeat: false });
+    dispatch("keyup", "phrase", { key: "t", repeat: false });
+    dispatch("keydown", "submit", { key: " ", repeat: false });
+    dispatch("keyup", "submit", { key: " ", repeat: false });
+    dispatch("click", "submit", { detail: 0, clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+
+    const report = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: true, valueMatches: false, valueSetterNative: true, fullscreen: false });
+    expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
+    expect(report.click.clicks.map((click) => [click.target, click.activation, click.offsetFromCentre])).toEqual([
+      ["start", "keyboard", null],
+      ["submit", "keyboard", null]
+    ]);
+    const statuses = Object.fromEntries(report.checks.map((check) => [check.id, check.status]));
+    expect(statuses.int_click_chain).toBe("pass");
+    expect(statuses.int_click_detail).toBe("na");
+    expect(statuses.int_centre).toBe("na");
+    expect(statuses.int_press).toBe("na");
+  });
+
+  it("counts an event it has to drop when the buffer is full and nothing can be evicted", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 0;
+    for (let index = 0; index < 400; index += 1) dispatch("click", "submit", { detail: 1, clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+    dispatch("keydown", "phrase", { key: "a", repeat: false });
+
+    expect(state.interaction.events).toHaveLength(400);
+    expect(state.interaction.dropped).toBe(1);
+  });
+
+  it("evicts an older hover to make room, so nothing is counted as dropped", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 0;
+    dispatch("pointerover", "submit", { pointerType: "mouse", clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+    for (let index = 0; index < 399; index += 1) dispatch("click", "submit", { detail: 1, clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+    dispatch("click", "submit", { detail: 1, clientX: 0, clientY: 0, screenX: 0, screenY: 0 });
+
+    expect(state.interaction.events).toHaveLength(400);
+    expect(state.interaction.events.some((event) => event.type === "pointerover")).toBe(false);
+    expect(state.interaction.dropped).toBe(0);
   });
 });

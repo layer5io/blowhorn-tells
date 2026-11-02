@@ -270,7 +270,7 @@ export function scoreReport(report, interaction = deriveInteraction(report.clien
     else if (behavior.score < 0.5) penalize(12, "behavior_score_borderline", "medium", "Behavior score is borderline.", behavior.summary);
   }
 
-  scoreInteraction(interaction, penalize);
+  scoreInteraction(interaction, penalize, new Set(reasons.map((reason) => reason.id)));
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   const classification = score >= 75 ? "likely_human" : score >= 45 ? "suspicious" : "likely_bot";
@@ -291,7 +291,9 @@ export function deriveInteraction(interaction) {
 }
 
 // Takes the result of deriveInteraction, so the report is not validated or evaluated a second time.
-export function scoreInteraction(interaction, penalize) {
+// scoredIds holds the reason ids already scored for this report. int_trusted counts the same script-made events
+// as synthetic_input (scoreRemoteControlTells), so when that has scored, int_trusted keeps its status but adds nothing.
+export function scoreInteraction(interaction, penalize, scoredIds = new Set()) {
   if (interaction === undefined) return;
   if (interaction === null) {
     penalize(5, "interaction_report_invalid", "low", "Interaction report did not match its schema and was not scored.");
@@ -301,6 +303,7 @@ export function scoreInteraction(interaction, penalize) {
   for (const check of interaction.checks) {
     const rule = INTERACTION_RULES[check.status];
     if (!rule) continue;
+    if (check.id === "int_trusted" && scoredIds.has("synthetic_input")) continue;
     penalize(rule.points, check.id, rule.severity, `Interaction test: ${check.observed}.`, { status: check.status, provisional: true });
   }
 }

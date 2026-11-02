@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildInteractionReport, INTERACTION_PHRASE } from "../public/collect-interaction.js";
 import { INTERACTION_CHECK_IDS } from "../public/interaction-checks.js";
+import { validateInteractionReport } from "../public/generated/validate-interaction-report.js";
 import {
   clickEvents,
   cdpClickNoMoves,
@@ -9,6 +10,8 @@ import {
   dispatchedChains,
   humanLike,
   FIXTURE_START_MS,
+  keyboardActivation,
+  keyboardRun,
   scriptedElementClick
 } from "./fixtures/interaction-events.js";
 
@@ -140,5 +143,45 @@ describe("buildInteractionReport", () => {
     });
     expect(report.task).toMatchObject({ completed: false, durationMs: null });
     expect(new Set(report.checks.map((check) => check.status))).toEqual(new Set(["na"]));
+  });
+
+  it("marks a click as a keyboard activation only when Enter or Space precedes it with no press", () => {
+    const report = build(keyboardRun());
+    expect(report.click.clicks.map((click) => [click.target, click.activation])).toEqual([["start", "keyboard"], ["submit", "keyboard"]]);
+    expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
+    for (const click of report.click.clicks) {
+      expect(click).toMatchObject({ detail: 0, offsetFromCentre: null, screenMinusClient: null, pressMs: null });
+    }
+  });
+
+  it("passes every check a keyboard-only run can be judged on, and leaves the pointer checks not judged", () => {
+    const statuses = statusesOf(build(keyboardRun()));
+    expect(statuses.int_trusted).toBe("pass");
+    expect(statuses.int_click_chain).toBe("pass");
+    expect(statuses.int_key_chain).toBe("pass");
+    expect(statuses.int_value_source).toBe("pass");
+    for (const id of ["int_click_detail", "int_screen_coords", "int_coalesced", "int_premove", "int_centre", "int_press"]) {
+      expect(statuses[id], id).toBe("na");
+    }
+  });
+
+  it("keeps a script-made click that has no press and no key as a pointer click that fails the chain", () => {
+    const report = build(scriptedElementClick());
+    expect(report.click.clicks.every((click) => click.activation === "pointer")).toBe(true);
+    expect(statusesOf(report).int_click_chain).toBe("fail");
+  });
+
+  it("counts untrusted keyup, input and paste on the task in typing.untrusted, which is the path that needs those types", () => {
+    const events = [
+      { type: "keyup", t: 100, target: "phrase", isTrusted: false, keyClass: "printable", repeat: false },
+      { type: "input", t: 101, target: "phrase", isTrusted: false, inputType: "insertText" },
+      { type: "paste", t: 102, target: "phrase", isTrusted: false }
+    ];
+    expect(build({ events, task: { startMs: 0, endMs: 200, completed: true, valueMatches: false, valueSetterNative: true, fullscreen: false } }).typing.untrusted).toBe(3);
+  });
+
+  it("fails trust for a script-made keyboard activation", () => {
+    const events = [...keyboardActivation({ target: "start", t: FIXTURE_START_MS, key: "Enter", trusted: false }), ...clickEvents({ target: "submit", t: FIXTURE_START_MS + 900 })];
+    expect(statusesOf(buildInteractionReport(events, task(events))).int_trusted).toBe("fail");
   });
 });

@@ -9,6 +9,7 @@ const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "moused
 const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
 const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus"]);
 const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
+const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 const PREMOVE_WINDOW_MS = 1000;
 const PREMOVE_NEAR_PX = 200;
 const MAX_INTERACTION_EVENTS = 400;
@@ -83,13 +84,19 @@ function recordInteraction(state, event) {
   const target = INTERACTION_TARGETS.has(element?.dataset.tellsTarget) ? element.dataset.tellsTarget : null;
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
-  if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null) return;
+  // The one exception is Enter or Space on Start, which is how a keyboard user starts the test; collect-interaction.js reads it only to tell the click apart.
+  const activationKey = (event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(keyClass(event.key));
+  if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null && !(target === "start" && activationKey)) return;
   // OS auto-repeat keydowns are ignored by buildTyping, so they are not recorded either; they would fill the buffer.
   if (event.type === "keydown" && event.repeat) return;
   // Once Start is armed, later clicks on it do nothing in challenge.js, so they are not recorded either.
   // The arming click's own pointer chain runs before challenge.js sets startMs, so it is still recorded.
   if (target === "start" && interaction.startMs !== null && INTERACTION_POINTER_TYPES.has(event.type)) return;
-  if (interaction.events.length >= MAX_INTERACTION_EVENTS && !evictInteractionEvent(interaction.events)) return;
+  if (interaction.events.length >= MAX_INTERACTION_EVENTS && !evictInteractionEvent(interaction.events)) {
+    // Nothing left to evict: the event is lost, and challenge.js refuses to score a run that lost any.
+    interaction.dropped += 1;
+    return;
+  }
 
   const t = Math.round(performance.now() - state.startedAt);
   const record = { type: event.type, t, target, isTrusted: event.isTrusted };
@@ -164,9 +171,10 @@ function distanceToRect(x, y, rect) {
   return Math.hypot(dx, dy);
 }
 
-// Only the class of a key is kept: printable, space or control. The key itself is never stored.
+// Only the class of a key is kept: printable, space, enter or control. The key itself is never stored.
 function keyClass(key) {
   if (key === " ") return "space";
+  if (key === "Enter") return "enter";
   return typeof key === "string" && key.length === 1 ? "printable" : "control";
 }
 
@@ -254,8 +262,7 @@ export function computeBehavior(state, now = performance.now()) {
   if ((counts.keydown || 0) > 0) score += 0.08;
   if ((counts.scroll || 0) > 0) score += 0.08;
   if (rafStdDev > 0.3) score += 0.05;
-  const challengeCompleted = interactionCompleted(state);
-  if (challengeCompleted) score += 0.16;
+  if (interactionCompleted(state)) score += 0.16;
   if (elapsedMs > 3500 && Object.keys(counts).length === 0) score = 0.03;
 
   score = Math.max(0, Math.min(1, score));
@@ -268,8 +275,7 @@ export function computeBehavior(state, now = performance.now()) {
       pointerMoveSamples: pointerMoves.length,
       pointerDistance: Math.round(pointerDistance),
       pointerSpeedStdDev: Math.round(speedStdDev * 10000) / 10000,
-      rafStdDev: Math.round(rafStdDev * 1000) / 1000,
-      challengeCompleted
+      rafStdDev: Math.round(rafStdDev * 1000) / 1000
     },
     recentEvents: state.events.slice(-30)
   };

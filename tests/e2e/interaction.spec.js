@@ -4,6 +4,7 @@ import {
   cdpClick,
   createCdpDriver,
   createHumanDriver,
+  createKeyboardDriver,
   createPlaywrightDriver,
   createSyntheticDriver,
   openDrill,
@@ -25,6 +26,10 @@ function printRow(row) {
   }
   console.log([row.family, ...INTERACTION_CHECK_IDS.map((id) => CODE[row.statuses[id]] || "?")].join("  "));
   for (const click of row.interaction?.click?.clicks || []) {
+    if (click.activation === "keyboard") {
+      console.log(`    ${click.target}: keyboard activation, trusted ${click.isTrusted}, detail ${click.detail}`);
+      continue;
+    }
     console.log(`    ${click.target}: trusted ${click.isTrusted}, pointer "${click.pointerType}", detail ${click.detail}, ` +
       `press ${click.pressMs ?? "-"} ms, premove ${click.premoveSamples ?? "-"} samples ${click.premovePathPx ?? "-"} px, ` +
       `coalesced ${click.coalescedMin ?? "-"}, off centre (${click.offsetFromCentre.dx}, ${click.offsetFromCentre.dy})`);
@@ -47,7 +52,9 @@ async function runFamily(page, family, drive) {
   const interaction = await page.evaluate(() => window.__tellsInteraction);
   const statuses = Object.fromEntries((interaction?.checks || []).map((check) => [check.id, check.status]));
   const reasons = (body.verdict?.reasons || []).filter((reason) => reason.id.startsWith("int_"));
-  const row = { family, statuses, reasons, interaction, score: body.verdict?.score };
+  // The Worker scores script-made input once, as synthetic_input, so int_trusted adds no reason of its own then.
+  const syntheticInput = (body.verdict?.reasons || []).some((reason) => reason.id === "synthetic_input");
+  const row = { family, statuses, reasons, interaction, score: body.verdict?.score, syntheticInput };
   printRow(row);
   return row;
 }
@@ -58,6 +65,7 @@ function expectWorkerAgreesWithPage(row) {
   const expected = [];
   for (const id of INTERACTION_CHECK_IDS) {
     const status = row.statuses[id];
+    if (id === "int_trusted" && row.syntheticInput) continue;
     if (status === "fail") expected.push([id, "medium"]);
     if (status === "warn") expected.push([id, "low"]);
   }
@@ -113,5 +121,18 @@ test("script-made clicks, keys and value assignment fail trust and value source"
   expect(row.statuses.int_trusted).toBe("fail");
   expect(row.statuses.int_value_source).toBe("fail");
   expect(row.statuses.int_click_chain).toBe("fail");
+  expectWorkerAgreesWithPage(row);
+});
+
+test("keyboard-only Start and Submit are recorded as keyboard activations and not failed by the click checks", async ({ page }) => {
+  const row = await runFamily(page, "keyboard only", () => createKeyboardDriver(page).run());
+  expect(row.interaction.task.completed).toBe(true);
+  expect(row.interaction.click.clicks.map((click) => [click.target, click.activation])).toEqual([["start", "keyboard"], ["submit", "keyboard"]]);
+  expect(row.statuses.int_click_chain).toBe("pass");
+  for (const id of ["int_click_detail", "int_screen_coords", "int_centre", "int_press", "int_premove", "int_coalesced"]) {
+    expect(row.statuses[id], id).toBe("na");
+  }
+  const clickChecks = ["int_click_chain", "int_click_detail", "int_screen_coords", "int_centre", "int_press", "int_premove", "int_coalesced"];
+  expect(failed(row).filter((id) => clickChecks.includes(id))).toEqual([]);
   expectWorkerAgreesWithPage(row);
 });

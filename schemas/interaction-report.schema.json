@@ -30,10 +30,11 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["target", "isTrusted", "chain", "detail", "offsetFromCentre", "screenMinusClient"],
+            "required": ["target", "isTrusted", "activation", "chain", "detail", "offsetFromCentre", "screenMinusClient"],
             "properties": {
               "target": { "enum": ["start", "submit"] },
               "isTrusted": { "type": "boolean" },
+              "activation": { "enum": ["pointer", "keyboard"] },
               "pointerType": { "enum": ["mouse", "pen", "touch", "", null] },
               "chain": {
                 "type": "array",
@@ -44,13 +45,15 @@
               },
               "detail": { "type": "integer" },
               "offsetFromCentre": {
-                "type": "object",
+                "description": "Null for a keyboard activation, which has no pointer position.",
+                "type": ["object", "null"],
                 "additionalProperties": false,
                 "required": ["dx", "dy"],
                 "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }
               },
               "screenMinusClient": {
-                "type": "object",
+                "description": "Null for a keyboard activation, which has no pointer position.",
+                "type": ["object", "null"],
                 "additionalProperties": false,
                 "required": ["dx", "dy"],
                 "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }

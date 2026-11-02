@@ -48,7 +48,8 @@ const EVALUATORS = {
   int_trusted(report) {
     const clicks = report.click.clicks;
     const eventsSeen = clicks.length + report.typing.counts.keydown + report.typing.counts.input + report.typing.counts.paste;
-    // typing.untrusted already includes untrusted clicks (summarizeInput reads every event), so take the larger count, not the sum.
+    // typing.untrusted counts every untrusted input event on the task buttons and the phrase field, clicks included,
+    // so the untrusted clicks are already inside it. Take the larger count rather than adding the two.
     const untrustedClicks = clicks.filter((click) => click.isTrusted === false).length;
     const untrusted = Math.max(report.typing.untrusted, untrustedClicks);
     if (eventsSeen === 0 && untrusted === 0) return na("no task events");
@@ -59,41 +60,47 @@ const EVALUATORS = {
   int_click_chain(report) {
     const clicks = report.click.clicks;
     if (!clicks.length) return na("no clicks");
-    const missing = clicks.filter((click) => !click.chain.includes("pointerdown") && !click.chain.includes("mousedown"));
-    if (missing.length) return result("fail", `${missing.length} of ${clicks.length} clicks had no pointerdown or mousedown`);
-    const disordered = clicks.filter((click) => !inOrder(click.chain, CLICK_ORDER));
-    if (disordered.length) return result("warn", `${disordered.length} of ${clicks.length} clicks had an incomplete or out-of-order press and release`);
-    return result("pass", `full press and release chain on all ${clicks.length} clicks`);
+    // A keyboard activation has no press to check: Enter or Space on the button is its valid chain.
+    const pointer = clicks.filter(isPointerClick);
+    const keyboard = clicks.length - pointer.length;
+    if (!pointer.length) return result("pass", `keyboard activation on all ${clicks.length} clicks`);
+    const missing = pointer.filter((click) => !click.chain.includes("pointerdown") && !click.chain.includes("mousedown"));
+    if (missing.length) return result("fail", `${missing.length} of ${pointer.length} pointer clicks had no pointerdown or mousedown`);
+    const disordered = pointer.filter((click) => !inOrder(click.chain, CLICK_ORDER));
+    if (disordered.length) return result("warn", `${disordered.length} of ${pointer.length} pointer clicks had an incomplete or out-of-order press and release`);
+    return result("pass", keyboard
+      ? `full press and release chain on ${pointer.length} pointer clicks, keyboard activation on ${keyboard}`
+      : `full press and release chain on all ${clicks.length} clicks`);
   },
 
   int_click_detail(report) {
-    const trusted = trustedClicks(report);
-    if (!trusted.length) return na("no trusted clicks");
+    const trusted = trustedPointerClicks(report);
+    if (!trusted.length) return na("no trusted pointer clicks");
     const zero = trusted.filter((click) => click.detail === 0);
-    if (zero.length) return result("fail", `${zero.length} of ${trusted.length} trusted clicks had click detail 0`);
-    return result("pass", `click detail of at least 1 on all ${trusted.length} trusted clicks`);
+    if (zero.length) return result("fail", `${zero.length} of ${trusted.length} trusted pointer clicks had click detail 0`);
+    return result("pass", `click detail of at least 1 on all ${trusted.length} trusted pointer clicks`);
   },
 
   int_screen_coords(report) {
     if (report.task.fullscreen) return na("fullscreen, not judged");
-    const trusted = trustedClicks(report);
-    if (!trusted.length) return na("no trusted clicks");
+    const trusted = trustedPointerClicks(report);
+    if (!trusted.length) return na("no trusted pointer clicks");
     const equal = trusted.filter((click) => click.screenMinusClient && click.screenMinusClient.dx === 0 && click.screenMinusClient.dy === 0);
     if (equal.length === trusted.length) return result("warn", "screen and client coordinates are equal on every click");
     return result("pass", "screen and client coordinates differ");
   },
 
   int_coalesced(report) {
-    const values = report.click.clicks.map((click) => click.coalescedMin).filter((value) => value !== null && value !== undefined);
+    const values = report.click.clicks.filter(isPointerClick).map((click) => click.coalescedMin).filter((value) => value !== null && value !== undefined);
     if (!values.length) return na("no pointer moves before clicks");
     const zero = values.filter((value) => value === 0).length;
-    if (zero === values.length) return result("fail", "no coalesced pointer events on any click");
+    if (zero === values.length) return result("warn", "no coalesced pointer events on any click");
     if (zero) return result("warn", `no coalesced pointer events before ${zero} of ${values.length} clicks`);
     return result("pass", "coalesced pointer events present before every click");
   },
 
   int_premove(report) {
-    const mouse = report.click.clicks.filter((click) => click.pointerType === "mouse");
+    const mouse = report.click.clicks.filter((click) => isPointerClick(click) && click.pointerType === "mouse");
     if (!mouse.length) return na("no mouse clicks (touch or pen not judged)");
     const samples = mouse.map((click) => click.premoveSamples || 0);
     if (samples.every((count) => count === 0)) return result("fail", "no pointer movement in the second before any click");
@@ -103,8 +110,8 @@ const EVALUATORS = {
   },
 
   int_centre(report) {
-    const trusted = trustedClicks(report).filter((click) => click.offsetFromCentre);
-    if (!trusted.length) return na("no trusted clicks");
+    const trusted = trustedPointerClicks(report).filter((click) => click.offsetFromCentre);
+    if (!trusted.length) return na("no trusted pointer clicks");
     const distances = trusted.map((click) => Math.hypot(click.offsetFromCentre.dx, click.offsetFromCentre.dy));
     const farthest = Math.max(...distances);
     if (farthest > T.centrePassPx) return result("pass", `clicks land off centre (farthest ${round(farthest)} px)`);
@@ -113,7 +120,7 @@ const EVALUATORS = {
   },
 
   int_press(report) {
-    const presses = trustedClicks(report).map((click) => click.pressMs).filter((value) => value !== null && value !== undefined);
+    const presses = trustedPointerClicks(report).map((click) => click.pressMs).filter((value) => value !== null && value !== undefined);
     if (!presses.length) return na("no press durations");
     if (presses.every((ms) => ms >= T.pressPassMinMs && ms <= T.pressPassMaxMs)) return result("pass", `press held ${T.pressPassMinMs} to ${T.pressPassMaxMs} ms on every click`);
     if (presses.every((ms) => ms < T.pressFailMs)) return result("fail", `every press under ${T.pressFailMs} ms`);
@@ -152,8 +159,12 @@ const EVALUATORS = {
   },
 
   int_dwell(report) {
-    const stats = report.typing.dwellMs;
-    if (!stats || stats.n === 0) return result("fail", "no key holds recorded");
+    const { counts, dwellMs: stats } = report.typing;
+    if (!stats || stats.n === 0) {
+      // Text that arrived by paste has no key holds to judge, so there is nothing to check.
+      if (counts.paste > 0 && counts.keydown === 0) return na("value arrived by paste, no key holds");
+      return result("fail", "no key holds recorded");
+    }
     if (stats.median === 0 && stats.stdDev === 0) return result("fail", "every key hold was 0 ms");
     const observed = `median ${round(stats.median)} ms over ${stats.n} keys`;
     if (stats.stdDev === 0) return result("warn", `every key held for the same time (${observed})`);
@@ -182,8 +193,13 @@ export function evaluateInteractionChecks(report) {
   }));
 }
 
-function trustedClicks(report) {
-  return report.click.clicks.filter((click) => click.isTrusted);
+function isPointerClick(click) {
+  return click.activation === "pointer";
+}
+
+// Pointer geometry, press and detail only mean something for a pointer click, so keyboard activations are left out.
+function trustedPointerClicks(report) {
+  return report.click.clicks.filter((click) => click.isTrusted && isPointerClick(click));
 }
 
 function inOrder(chain, sequence) {

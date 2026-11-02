@@ -1,6 +1,6 @@
 import { bool, formatList, formatMs, formatValue } from "./utils.js";
 
-export function buildReasonEvidence(reason) {
+export function buildReasonEvidence(reason, report) {
   const data = reason?.data;
   if (!data || typeof data !== "object") return [];
 
@@ -22,7 +22,7 @@ export function buildReasonEvidence(reason) {
       entry("Pointer distance", data.pointerDistance),
       entry("Pointer speed jitter", data.pointerSpeedStdDev),
       entry("RAF jitter", data.rafStdDev),
-      entry("Interaction test", data.challengeCompleted === true ? "complete" : "not complete")
+      entry("Interaction test", interactionTestLabel(report))
     ]);
   }
 
@@ -88,7 +88,7 @@ export function buildBehaviorSummary(report) {
     "Pointer distance": summary.pointerDistance ?? "n/a",
     "Pointer speed jitter": summary.pointerSpeedStdDev ?? "n/a",
     "RAF jitter": summary.rafStdDev ?? "n/a",
-    "Interaction test": summary.challengeCompleted === true ? "complete" : "not complete"
+    "Interaction test": interactionTestLabel(report)
   };
 }
 
@@ -140,6 +140,11 @@ export function getBehaviorFreshness(report) {
     };
   }
   return { isStale: false, message: "verdict and behaviour sample are aligned" };
+}
+
+// Completion comes from the interaction report the client sent, the same source the Interaction check row uses.
+function interactionTestLabel(report) {
+  return report?.client?.interaction?.task?.completed === true ? "complete" : "not complete";
 }
 
 function entry(label, value, tone = "neutral") {

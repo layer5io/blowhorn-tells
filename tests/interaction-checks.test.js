@@ -26,6 +26,7 @@ function click(overrides = {}) {
   return {
     target: "start",
     isTrusted: true,
+    activation: "pointer",
     pointerType: "mouse",
     chain: ["pointerdown", "mousedown", "focus", "pointerup", "mouseup", "click"],
     detail: 1,
@@ -83,9 +84,9 @@ describe("interaction check thresholds", () => {
   it.each([
     [[1, 2], "pass"],
     [[0, 2], "warn"],
-    [[0, 0], "fail"],
+    [[0, 0], "warn"],
     [[], "na"]
-  ])("int_coalesced over %j is %s", (values, expected) => {
+  ])("int_coalesced over %j is %s: missing coalesced events warn, they never fail", (values, expected) => {
     const clicks = values.map((coalescedMin) => click({ coalescedMin }));
     expect(status(report({ clicks: clicks.length ? clicks : [click({ coalescedMin: null })] }), "int_coalesced")).toBe(expected);
   });
@@ -161,5 +162,50 @@ describe("interaction check thresholds", () => {
     [500, "fail"]
   ])("int_task_speed: Start to Submit in %d ms is %s", (durationMs, expected) => {
     expect(status(report({ durationMs }), "int_task_speed")).toBe(expected);
+  });
+
+  it("int_dwell: paste with no key holds is not applicable, while no holds from typed keys still fails", () => {
+    const noHolds = { dwellMs: null };
+    expect(status(report({ typing: { ...noHolds, counts: { keydown: 0, keypress: 0, beforeinput: 0, input: 1, keyup: 0, paste: 1 } } }), "int_dwell")).toBe("na");
+    expect(status(report({ typing: { ...noHolds, counts: { keydown: 14, keypress: 14, beforeinput: 14, input: 14, keyup: 0, paste: 1 } } }), "int_dwell")).toBe("fail");
+    expect(status(report({ typing: { ...noHolds } }), "int_dwell")).toBe("fail");
+  });
+
+  describe("keyboard activation", () => {
+    const keyboardClick = (overrides = {}) => click({
+      activation: "keyboard",
+      chain: ["focus", "click"],
+      detail: 0,
+      offsetFromCentre: null,
+      screenMinusClient: null,
+      pointerType: "",
+      premoveSamples: undefined,
+      premovePathPx: undefined,
+      coalescedMin: undefined,
+      pressMs: null,
+      ...overrides
+    });
+
+    it("int_click_chain: a keyboard activation is a valid chain, so a keyboard-only run passes", () => {
+      expect(status(report({ clicks: [keyboardClick()] }), "int_click_chain")).toBe("pass");
+      expect(status(report({ clicks: [keyboardClick({ target: "submit" })] }), "int_click_chain")).toBe("pass");
+    });
+
+    it("int_click_chain: a keyboard activation next to a broken pointer click still judges the pointer click", () => {
+      expect(status(report({ clicks: [keyboardClick(), click({ chain: ["focus", "click"] })] }), "int_click_chain")).toBe("fail");
+    });
+
+    it("pointer geometry checks return na when only keyboard activations remain", () => {
+      const rep = report({ clicks: [keyboardClick(), keyboardClick({ target: "submit" })] });
+      for (const id of ["int_click_detail", "int_screen_coords", "int_centre", "int_press", "int_premove", "int_coalesced"]) {
+        expect(status(rep, id), id).toBe("na");
+      }
+    });
+
+    it("pointer geometry checks still judge the pointer clicks beside a keyboard activation", () => {
+      const rep = report({ clicks: [keyboardClick(), click({ offsetFromCentre: { dx: 0, dy: 0 } })] });
+      expect(status(rep, "int_centre")).toBe("fail");
+      expect(status(rep, "int_click_detail")).toBe("pass");
+    });
   });
 });

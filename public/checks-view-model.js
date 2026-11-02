@@ -207,7 +207,8 @@ const CHECKS = [
     name: "Interaction",
     slug: "interaction",
     reasons: INTERACTION_CHECK_IDS,
-    available: ({ client }) => client?.interaction?.task?.completed === true,
+    // A completed test whose checks are all not-judged has no evidence either, so it reads as not taken.
+    available: ({ client }) => client?.interaction?.task?.completed === true && (client.interaction.checks || []).some((check) => check.status !== "na"),
     unavailable: () => "not taken",
     observe: ({ client }) => {
       const checks = client.interaction.checks || [];

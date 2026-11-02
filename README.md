@@ -12,7 +12,7 @@ It runs at [tells.blowhorn.ai](https://tells.blowhorn.ai) as one Cloudflare Work
 
 **Cross-context consistency.** The same facts read in the window, a Web Worker, a Service Worker and a same-origin iframe must agree, and the request headers must agree with what the browser reports.
 
-**Behavior.** A transparent score from pointer, key, scroll, focus and frame timing, plus an optional interaction test: press Start, type one fixed phrase, press Submit. Its 13 checks cover event order, click geometry, press length and key rhythm, and they stay warn-only until calibrated.
+**Behavior.** A transparent score from pointer, key, scroll, focus and frame timing, plus an optional interaction test: press Start, type one fixed phrase, press Submit (Enter or Space on either button also works). Its 13 checks cover event order, click geometry, press length and key rhythm, and they stay warn-only until calibrated.
 
 ## API for scripts
 

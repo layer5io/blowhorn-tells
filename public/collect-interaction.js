@@ -14,6 +14,8 @@ const CHAIN_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mous
 const POINTER_TYPES = new Set(["mouse", "pen", "touch"]);
 const PASTE_INPUT = "insertFromPaste";
 const TYPED_KEY_CLASSES = new Set(["printable", "space"]);
+// Keys that activate a button. Their keydown and keyup are not in the chain: they only mark the click as keyboard-made.
+const ACTIVATION_KEY_CLASSES = new Set(["enter", "space"]);
 
 export function buildInteractionReport(events, task) {
   const endMs = task.endMs ?? Infinity;
@@ -49,36 +51,48 @@ export function readFieldFacts(field, phrase = INTERACTION_PHRASE) {
 }
 
 // Groups the events on each button into one chain per click: everything since that button's
-// previous click, ending with the click itself.
+// previous click, ending with the click itself. Enter or Space on a button since its previous click
+// is noted too, so a click with no press in its chain can be told apart as a keyboard activation.
 function buildClicks(recorded) {
   const pending = { start: [], submit: [] };
+  const keyActivated = { start: false, submit: false };
   const clicks = [];
   for (const event of recorded) {
     const buffer = pending[event.target];
-    if (!buffer || !CHAIN_TYPES.has(event.type)) continue;
+    if (!buffer) continue;
+    if ((event.type === "keydown" || event.type === "keyup") && ACTIVATION_KEY_CLASSES.has(event.keyClass)) {
+      keyActivated[event.target] = true;
+      continue;
+    }
+    if (!CHAIN_TYPES.has(event.type)) continue;
     buffer.push(event);
     if (event.type === "click") {
-      clicks.push(describeClick(buffer));
+      clicks.push(describeClick(buffer, keyActivated[event.target]));
       buffer.length = 0;
+      keyActivated[event.target] = false;
     }
   }
   return clicks.slice(-MAX_CLICKS);
 }
 
-function describeClick(buffer) {
+// A click with no pointerdown or mousedown and an Enter or Space before it is a keyboard activation.
+// Its pointer geometry is null: the event has no pointer position, and its coordinates are zero.
+function describeClick(buffer, keyActivated) {
   const click = buffer[buffer.length - 1];
   const pointerDown = lastOfType(buffer, "pointerdown");
   const downIndex = lastIndexOfType(buffer, "mousedown");
   const upIndex = downIndex === -1 ? -1 : buffer.findIndex((event, index) => index > downIndex && event.type === "mouseup");
+  const keyboard = keyActivated && pointerDown === undefined && downIndex === -1;
   const described = {
     target: click.target,
     isTrusted: click.isTrusted,
+    activation: keyboard ? "keyboard" : "pointer",
     pointerType: pointerDown && POINTER_TYPES.has(pointerDown.pointerType) ? pointerDown.pointerType : "",
     chain: buffer.map((event) => event.type),
     detail: click.detail ?? 0,
-    // Set on every pointer event on a task button (runtime.js), so both fields are always present.
-    offsetFromCentre: { dx: click.dx, dy: click.dy },
-    screenMinusClient: { dx: click.screenDx, dy: click.screenDy },
+    // Set on every pointer event on a task button (runtime.js), so both fields are always present for a pointer click.
+    offsetFromCentre: keyboard ? null : { dx: click.dx, dy: click.dy },
+    screenMinusClient: keyboard ? null : { dx: click.screenDx, dy: click.screenDy },
     pressMs: upIndex === -1 ? null : round1(buffer[upIndex].t - buffer[downIndex].t)
   };
   if (pointerDown) {

@@ -223,6 +223,13 @@ describe("Interaction row", () => {
     expect(rows["Interaction"].status).not.toBe("fail");
   });
 
+  it("is not taken when the test is completed but no check was judged, or there are no checks", () => {
+    const judged = reportFrom(humanLike());
+    const allNotJudged = { ...judged, checks: judged.checks.map((check) => ({ ...check, status: "na", observed: "not judged" })) };
+    expect(scoredWith(allNotJudged).Interaction).toMatchObject({ status: "na", label: "Not available", result: "not taken" });
+    expect(scoredWith({ ...judged, checks: [] }).Interaction).toMatchObject({ status: "na", result: "not taken" });
+  });
+
   it("validates its row against the check-row schema in every state", () => {
     for (const interaction of [undefined, reportFrom(humanLike()), reportFrom(scriptedElementClick())]) {
       const row = scoredWith(interaction)["Interaction"];
