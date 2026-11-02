@@ -84,6 +84,8 @@ function recordInteraction(state, event) {
   if (!target) return;
   // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null) return;
+  // OS auto-repeat keydowns are ignored by buildTyping, so they are not recorded either; they would fill the buffer.
+  if (event.type === "keydown" && event.repeat) return;
   // Once Start is armed, later clicks on it do nothing in challenge.js, so they are not recorded either.
   // The arming click's own pointer chain runs before challenge.js sets startMs, so it is still recorded.
   if (target === "start" && interaction.startMs !== null && INTERACTION_POINTER_TYPES.has(event.type)) return;
