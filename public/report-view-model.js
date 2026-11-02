@@ -22,7 +22,7 @@ export function buildReasonEvidence(reason) {
       entry("Pointer distance", data.pointerDistance),
       entry("Pointer speed jitter", data.pointerSpeedStdDev),
       entry("RAF jitter", data.rafStdDev),
-      entry("Human check", data.challengeCompleted === true ? "complete" : "not complete")
+      entry("Interaction test", data.challengeCompleted === true ? "complete" : "not complete")
     ]);
   }
 
@@ -88,7 +88,7 @@ export function buildBehaviorSummary(report) {
     "Pointer distance": summary.pointerDistance ?? "n/a",
     "Pointer speed jitter": summary.pointerSpeedStdDev ?? "n/a",
     "RAF jitter": summary.rafStdDev ?? "n/a",
-    "Human check": summary.challengeCompleted === true ? "complete" : "not complete"
+    "Interaction test": summary.challengeCompleted === true ? "complete" : "not complete"
   };
 }
 

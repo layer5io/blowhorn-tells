@@ -1,54 +1,59 @@
+import { buildInteractionReport, INTERACTION_PHRASE, readFieldFacts } from "./collect-interaction.js";
+import { validateInteractionReport } from "./generated/validate-interaction-report.js";
 import { $ } from "./dom.js";
 
-export function setupChallenge(state, renderRuntime) {
-  const form = $("#challengeForm");
-  const wrap = $("#challengeTableWrap");
+// The interaction test: Start, type the fixed phrase, Submit. The three elements carry
+// data-tells-target so the capture in runtime.js and any harness can find them.
+export function setupChallenge(state, renderRuntime, runChecks) {
+  const startButton = $('[data-tells-target="start"]');
+  const field = $('[data-tells-target="phrase"]');
+  const submitButton = $('[data-tells-target="submit"]');
   const status = $("#challengeStatus");
-  const table = $("#challengeTable");
+  const nowMs = () => Math.round(performance.now() - state.startedAt);
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    state.challenge.formSubmitted = true;
-    state.challenge.submittedAtMs = Math.round(performance.now() - state.startedAt);
-
-    if (window.confirm("Start the human check?")) {
-      state.challenge.confirmAccepted = true;
-      state.challenge.tableShown = true;
-      wrap.classList.remove("hidden");
-      status.textContent = "Match each target value, then verify the row.";
-    }
+  startButton.addEventListener("click", () => {
+    if (state.interaction.startMs !== null) return;
+    state.interaction.startMs = nowMs();
+    state.challenge.started = true;
+    status.textContent = `Click the field, type ${INTERACTION_PHRASE}, then press Submit.`;
     renderRuntime(state);
   });
 
-  table.querySelectorAll("tbody tr").forEach((row) => {
-    const button = row.querySelector("button");
-    const input = row.querySelector("input");
-    const probeName = row.cells[0]?.textContent || "Probe";
-    const target = row.dataset.target || "";
+  submitButton.addEventListener("click", () => {
+    if (state.interaction.endMs !== null) return;
+    if (state.interaction.startMs === null) {
+      status.textContent = "Press Start first.";
+      return;
+    }
+    const facts = readFieldFacts(field);
+    if (!facts.valueMatches) {
+      status.textContent = `Type ${INTERACTION_PHRASE} exactly, then press Submit.`;
+      return;
+    }
 
-    button.addEventListener("click", () => {
-      if (button.dataset.updated === "1") return;
-      if (input.value.trim() !== target) {
-        status.textContent = `${probeName}: enter ${target} before verifying.`;
-        input.focus();
-        return;
-      }
-
-      button.dataset.updated = "1";
-      button.textContent = "Verified";
-      button.disabled = true;
-      input.disabled = true;
-      row.classList.add("is-verified");
-      state.challenge.updatedRows += 1;
-      state.challenge.lastUpdatedAtMs = Math.round(performance.now() - state.startedAt);
-      const rowCount = table.querySelectorAll("tbody tr").length;
-      if (state.challenge.updatedRows >= rowCount) {
-        state.challenge.completed = true;
-        status.textContent = "Human check complete. Run checks again to update the verdict.";
-      } else {
-        status.textContent = `${state.challenge.updatedRows} of ${rowCount} rows verified.`;
-      }
-      renderRuntime(state);
+    const endMs = nowMs();
+    state.interaction.endMs = endMs;
+    const report = buildInteractionReport(state.interaction.events, {
+      ...facts,
+      startMs: state.interaction.startMs,
+      endMs,
+      completed: true,
+      fullscreen: Boolean(document.fullscreenElement)
     });
+    if (!validateInteractionReport(report)) {
+      state.interaction.endMs = null;
+      status.textContent = "The interaction test could not be scored in this browser.";
+      return;
+    }
+
+    state.interaction.report = report;
+    window.__tellsInteraction = report;
+    state.challenge.completed = true;
+    state.challenge.completedAtMs = endMs;
+    field.disabled = true;
+    submitButton.disabled = true;
+    status.textContent = "Interaction test complete. Checking the verdict now.";
+    renderRuntime(state);
+    runChecks(state);
   });
 }

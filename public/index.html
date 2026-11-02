@@ -135,69 +135,21 @@
     <details class="panel challenge-panel toggle-panel" id="panel-challenge">
       <summary>
         <span class="summary-icon" aria-hidden="true"></span>
-        <span>Optional drill: prove you are human</span>
-        <small>Extra interaction evidence for the next verdict</small>
+        <span>Interaction test</span>
+        <small>Start, type one phrase, submit. Under 20 seconds</small>
       </summary>
-      <form id="challengeForm" class="challenge-form">
-        <p class="muted">This drill watches <em>how</em> a form gets filled in: typing rhythm,
-          pasting, corrections, pauses, timing. It never needs true answers, so nothing here
-          asks for anything real. Invent both answers. What you type is not sent or stored;
-          only the interaction counts and timings join the report.</p>
-        <div class="form-grid">
-          <label class="field">Call sign <input name="callsign" autocomplete="off" required
-              placeholder="Invent one, never your real name"></label>
-          <label class="field">Type this phrase: <code>swift paper tiger</code>
-            <input name="phrase" autocomplete="off" required placeholder="Type it, or paste it"></label>
+      <div class="challenge-form">
+        <p class="muted">Press Start, click the field, type the phrase, then press Submit. The phrase is
+          fixed, so nothing you type is read or sent. Only how the clicks and keys arrived is counted.</p>
+        <div>
+          <button type="button" class="button-secondary" data-tells-target="start">Start</button>
         </div>
-        <fieldset class="choice-fieldset">
-          <legend>Scan depth</legend>
-          <div class="choice-grid">
-            <label class="choice"><input type="radio" name="scanDepth" value="quick" required> Quick</label>
-            <label class="choice"><input type="radio" name="scanDepth" value="standard"> Standard</label>
-            <label class="choice"><input type="radio" name="scanDepth" value="deep"> Deep</label>
-            <label class="choice"><input type="radio" name="scanDepth" value="full"> Full sweep</label>
-          </div>
-        </fieldset>
-        <div class="check-list">
-          <label class="check-field"><input type="checkbox" name="terms" required> I agree to the check</label>
-          <label class="check-field"><input type="checkbox" name="events"> Include interaction timing</label>
-          <label class="check-field"><input type="checkbox" name="fingerprints"> Include browser fingerprints</label>
+        <label class="field">Type this phrase: <code>tells check 42</code>
+          <input data-tells-target="phrase" autocomplete="off" spellcheck="false" aria-describedby="challengeStatus"></label>
+        <div>
+          <button type="button" data-tells-target="submit">Submit</button>
         </div>
-        <button type="submit">Submit challenge</button>
-      </form>
-
-      <div id="challengeTableWrap" class="table-wrap hidden">
-        <table id="challengeTable" class="challenge-table">
-          <thead>
-            <tr>
-              <th>Probe</th>
-              <th>Target</th>
-              <th>Your value</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr data-target="24">
-              <td>Canvas probe</td>
-              <td><code>24</code></td>
-              <td><input inputmode="numeric" value="19"></td>
-              <td><button type="button">Verify</button></td>
-            </tr>
-            <tr data-target="58">
-              <td>WebGL probe</td>
-              <td><code>58</code></td>
-              <td><input inputmode="numeric" value="49"></td>
-              <td><button type="button">Verify</button></td>
-            </tr>
-            <tr data-target="31">
-              <td>Header probe</td>
-              <td><code>31</code></td>
-              <td><input inputmode="numeric" value="29"></td>
-              <td><button type="button">Verify</button></td>
-            </tr>
-          </tbody>
-        </table>
-        <p id="challengeStatus" class="muted">Match each target value, then verify the row.</p>
+        <p id="challengeStatus" class="muted" aria-live="polite">Press Start to begin.</p>
       </div>
     </details>
 

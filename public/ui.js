@@ -129,7 +129,7 @@ function renderBrowserSummary(state, client) {
     "WebRTC public IPs": (webrtc.publicIps || []).join(", ") || "none",
     "WebRTC private/mDNS": `${(webrtc.privateIps || []).join(", ") || "none"} / ${(webrtc.mdnsHosts || []).length || 0} mDNS`,
     "Behavior score": client.behavior?.score ?? "n/a",
-    "Human check": challengeStatus(state)
+    "Interaction test": challengeStatus(state)
   });
 }
 
@@ -176,7 +176,7 @@ export function renderRuntime(state) {
     "Behavior score": behavior.score,
     "Events": Object.entries(behavior.summary.eventCounts).map(([key, value]) => `${key}:${value}`).join(" ") || "none",
     "Pointer distance": behavior.summary.pointerDistance,
-    "Human check": challengeStatus(state)
+    "Interaction test": challengeStatus(state)
   });
   if (!state.report) {
     updateHeroReadout({ behaviour: String(behavior.score) });
@@ -184,7 +184,7 @@ export function renderRuntime(state) {
 }
 
 function challengeStatus(state) {
-  return state.challenge.completed ? "complete" : state.challenge.tableShown ? "in progress" : state.challenge.formSubmitted ? "submitted" : "not started";
+  return state.challenge.completed ? "complete" : state.challenge.started ? "in progress" : "not started";
 }
 
 function updateHeroReadoutFromReport(report) {

@@ -1,5 +1,6 @@
 import { collectAutomationSignals, collectBrowser } from "./collect-browser.js";
 import { collectFingerprints } from "./collect-fingerprints.js";
+import { buildInteractionReport, INTERACTION_PHRASE } from "./collect-interaction.js";
 import { collectNetwork } from "./collect-network.js";
 import { collectSurfaceIndicators } from "./collect-surfaces.js";
 import { collectTells } from "./collect-tells.js";
@@ -38,7 +39,8 @@ export async function runChecks(state) {
       network,
       consistency: computeConsistency(browser, workers, network),
       behavior: computeBehavior(state),
-      challenge: { ...state.challenge }
+      challenge: { ...state.challenge },
+      interaction: state.interaction.report || notTakenInteraction()
     };
 
     setStatus("Inspection in progress. Sending the readings to the server for scoring.");
@@ -53,6 +55,19 @@ export async function runChecks(state) {
   } finally {
     runBtn.disabled = false;
   }
+}
+
+// The interaction report is always sent. Before Submit it describes an untaken test, which scores nothing.
+function notTakenInteraction() {
+  return buildInteractionReport([], {
+    phraseLength: INTERACTION_PHRASE.length,
+    startMs: null,
+    endMs: null,
+    completed: false,
+    valueMatches: false,
+    valueSetterNative: null,
+    fullscreen: false
+  });
 }
 
 async function postReport(client) {

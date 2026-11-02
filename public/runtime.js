@@ -3,6 +3,14 @@ import { standardDeviation } from "./utils.js";
 
 export const BEHAVIOR_CHECKPOINTS_MS = [1500, 4000, 7000, 10000, 15000];
 
+// The interaction test's three buttons. Only events on these elements are recorded for it.
+const INTERACTION_TARGETS = new Set(["start", "phrase", "submit"]);
+const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click", "focus", "blur", "keydown", "keypress", "keyup", "beforeinput", "input", "paste"];
+const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
+const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
+const PREMOVE_WINDOW_MS = 1000;
+const MAX_INTERACTION_EVENTS = 400;
+
 export function setupEventCapture(state) {
   const record = (type, detail = {}) => {
     state.events.push({ type, t: Math.round(performance.now() - state.startedAt), ...detail });
@@ -10,6 +18,7 @@ export function setupEventCapture(state) {
   };
 
   const pointerHandler = (event) => {
+    if (event.type === "pointermove") recordPointerTrail(state, event);
     const now = performance.now();
     if (event.type === "pointermove" && now - state.lastPointerSampleAt < 60) return;
     state.lastPointerSampleAt = now;
@@ -31,10 +40,83 @@ export function setupEventCapture(state) {
   window.addEventListener("focus", () => record("focus"));
   window.addEventListener("blur", () => record("blur"));
   document.addEventListener("visibilitychange", () => record("visibilitychange", { visibilityState: document.visibilityState }));
+
+  // Capture phase, so focus and pointerenter (which do not bubble) are seen too.
+  INTERACTION_TYPES.forEach((type) => {
+    document.addEventListener(type, (event) => recordInteraction(state, event), { capture: true, passive: true });
+  });
 }
 
 function inputContext(event) {
   return { isTrusted: event.isTrusted, hidden: document.hidden, hasFocus: document.hasFocus() };
+}
+
+// Keeps only the step length of each pointer move from the last 1 s. No coordinates are kept,
+// so the window can answer "how far did the pointer travel before this press" without storing the path.
+function recordPointerTrail(state, event) {
+  const interaction = state.interaction;
+  const t = Math.round(performance.now() - state.startedAt);
+  const last = interaction.lastMove;
+  interaction.trail.push({
+    t,
+    isTrusted: event.isTrusted,
+    pointerType: event.pointerType,
+    coalesced: event.getCoalescedEvents?.().length ?? 0,
+    step: last ? Math.hypot(event.clientX - last.x, event.clientY - last.y) : 0
+  });
+  interaction.lastMove = { x: event.clientX, y: event.clientY };
+  while (interaction.trail.length && interaction.trail[0].t < t - PREMOVE_WINDOW_MS) interaction.trail.shift();
+}
+
+function recordInteraction(state, event) {
+  const interaction = state.interaction;
+  if (interaction.endMs !== null) return;
+  const element = event.target instanceof Element ? event.target.closest("[data-tells-target]") : null;
+  const target = INTERACTION_TARGETS.has(element?.dataset.tellsTarget) ? element.dataset.tellsTarget : null;
+  if (!target) return;
+  // Keys and text count only once the test has started; the pointer on the buttons counts from page load.
+  if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null) return;
+
+  const t = Math.round(performance.now() - state.startedAt);
+  const record = { type: event.type, t, target, isTrusted: event.isTrusted, hidden: document.hidden, hasFocus: document.hasFocus() };
+  if (INTERACTION_POINTER_TYPES.has(event.type)) {
+    const rect = element.getBoundingClientRect();
+    record.dx = roundOne(event.clientX - (rect.left + rect.width / 2));
+    record.dy = roundOne(event.clientY - (rect.top + rect.height / 2));
+    record.screenDx = event.screenX - event.clientX;
+    record.screenDy = event.screenY - event.clientY;
+  }
+  if (event.type === "click") record.detail = event.detail;
+  if (event.type === "pointerdown") Object.assign(record, pressPremove(interaction, event.pointerType, t));
+  if (event.type === "keydown" || event.type === "keypress" || event.type === "keyup") {
+    record.keyClass = keyClass(event.key);
+    record.repeat = event.repeat === true;
+  }
+  if (event.type === "beforeinput" || event.type === "input") record.inputType = typeof event.inputType === "string" ? event.inputType : "";
+
+  interaction.events.push(record);
+  if (interaction.events.length > MAX_INTERACTION_EVENTS) interaction.events.shift();
+}
+
+function pressPremove(interaction, pointerType, t) {
+  const samples = interaction.trail.filter((sample) => sample.t >= t - PREMOVE_WINDOW_MS && sample.pointerType === pointerType);
+  const trusted = samples.filter((sample) => sample.isTrusted).map((sample) => sample.coalesced);
+  return {
+    pointerType,
+    premoveSamples: samples.length,
+    premovePathPx: roundOne(samples.reduce((sum, sample) => sum + sample.step, 0)),
+    coalescedMin: trusted.length ? Math.min(...trusted) : null
+  };
+}
+
+// Only the class of a key is kept: printable, space or control. The key itself is never stored.
+function keyClass(key) {
+  if (key === " ") return "space";
+  return typeof key === "string" && key.length === 1 ? "printable" : "control";
+}
+
+function roundOne(value) {
+  return Math.round(value * 10) / 10;
 }
 
 export function setupRafProbe(state) {
