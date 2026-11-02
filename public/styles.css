@@ -509,8 +509,11 @@ h3 {
 }
 
 @media (min-width: 720px) {
-  .footer-top { grid-template-columns: minmax(0, 1fr) minmax(0, 32rem); gap: 32px; }
   .footer-cols { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (min-width: 960px) {
+  .footer-top { grid-template-columns: minmax(240px, 1fr) minmax(0, 32rem); gap: 32px; }
 }
 
 @media (min-width: 1080px) {
