@@ -275,6 +275,25 @@ describe("recordInteraction", () => {
     }
   });
 
+  it("does not count the keyup of a shortcut whose modifier was released first, and still counts a typed key after it", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 1;
+    dispatch("keydown", "phrase", { key: "Control", code: "ControlLeft", repeat: false, ctrlKey: true });
+    dispatch("keydown", "phrase", { key: "v", code: "KeyV", repeat: false, ctrlKey: true });
+    dispatch("paste", "phrase");
+    dispatch("beforeinput", "phrase", { inputType: "insertFromPaste" });
+    dispatch("input", "phrase", { inputType: "insertFromPaste" });
+    dispatch("keyup", "phrase", { key: "Control", code: "ControlLeft", repeat: false });
+    dispatch("keyup", "phrase", { key: "v", code: "KeyV", repeat: false });
+
+    const report = () => buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: true, valueMatches: true, valueSetterNative: true, fullscreen: false });
+    expect(report().typing.counts).toMatchObject({ keydown: 0, keyup: 0, paste: 1 });
+
+    dispatch("keydown", "phrase", { key: "v", code: "KeyV", repeat: false });
+    dispatch("keyup", "phrase", { key: "v", code: "KeyV", repeat: false });
+    expect(report().typing.counts).toMatchObject({ keydown: 1, keyup: 1 });
+  });
+
   it("records a character typed with AltGr as a typed key, though AltGr sets ctrlKey and altKey, and Ctrl or Alt with a key as a shortcut", () => {
     const { state, dispatch } = pageWithCapture();
     state.interaction.startMs = 1;
