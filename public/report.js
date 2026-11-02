@@ -39,7 +39,6 @@ export async function runChecks(state) {
       network,
       consistency: computeConsistency(browser, workers, network),
       behavior: computeBehavior(state),
-      challenge: { ...state.challenge },
       interaction: state.interaction.report || notTakenInteraction()
     };
 

@@ -79,7 +79,7 @@ const EVALUATORS = {
     const trusted = trustedClicks(report);
     if (!trusted.length) return na("no trusted clicks");
     const equal = trusted.filter((click) => click.screenMinusClient && click.screenMinusClient.dx === 0 && click.screenMinusClient.dy === 0);
-    if (equal.length === trusted.length) return result("fail", "screen and client coordinates are equal on every click");
+    if (equal.length === trusted.length) return result("warn", "screen and client coordinates are equal on every click");
     return result("pass", "screen and client coordinates differ");
   },
 
@@ -124,10 +124,11 @@ const EVALUATORS = {
     const { counts, inputWithoutKeydown } = report.typing;
     if (!counts.keydown && !inputWithoutKeydown) return na("no typed keys");
     if (inputWithoutKeydown > 0) return result("fail", `${inputWithoutKeydown} characters arrived with no key press (insertText-style)`);
-    if (counts.keypress < counts.keydown || counts.keyup < counts.keydown || counts.beforeinput < counts.keydown) {
-      return result("warn", `keypress or keyup missing on some of ${counts.keydown} keys`);
+    // keypress is deprecated and not judged; counts.keypress stays in the report as data.
+    if (counts.beforeinput < counts.keydown || counts.input < counts.keydown || counts.keyup < counts.keydown) {
+      return result("warn", `beforeinput, input or keyup missing on some of ${counts.keydown} keys`);
     }
-    return result("pass", `full key chain on all ${counts.keydown} keys`);
+    return result("pass", `keydown, beforeinput, input and keyup on all ${counts.keydown} keys`);
   },
 
   int_value_source(report) {

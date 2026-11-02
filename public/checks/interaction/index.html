@@ -84,12 +84,12 @@
             <tr><th scope="row"><code>int_trusted</code></th><td>Every task event came from the browser, not a script</td><td>All trusted</td><td>-</td><td>Any script-made event</td></tr>
             <tr><th scope="row"><code>int_click_chain</code></th><td>Press, release and click order before each click</td><td>Full chain in order</td><td>Chain present, order differs</td><td>Click with no pointerdown or mousedown</td></tr>
             <tr><th scope="row"><code>int_click_detail</code></th><td>Click count on trusted clicks</td><td>1 or more</td><td>-</td><td>0</td></tr>
-            <tr><th scope="row"><code>int_screen_coords</code></th><td>Screen and window coordinates differ (not judged fullscreen)</td><td>Differ</td><td>-</td><td>Equal on every click</td></tr>
+            <tr><th scope="row"><code>int_screen_coords</code></th><td>Screen and window coordinates differ (not judged fullscreen)</td><td>Differ</td><td>Equal on every click</td><td>-</td></tr>
             <tr><th scope="row"><code>int_coalesced</code></th><td>Coalesced pointer events before each click</td><td>1 or more</td><td>0 on some</td><td>0 on all</td></tr>
-            <tr><th scope="row"><code>int_premove</code></th><td>Pointer samples and travel in the second before each mouse press</td><td>3 or more, over 20 px</td><td>1 or 2 samples</td><td>0 on every click</td></tr>
+            <tr><th scope="row"><code>int_premove</code></th><td>Pointer moves in the second before each mouse press that are within 200 px of the pressed button or closer to it than the move before</td><td>3 or more, over 20 px</td><td>1 or 2 samples</td><td>0 on every click</td></tr>
             <tr><th scope="row"><code>int_centre</code></th><td>Distance of each click from the button centre</td><td>Any click over 1 px off</td><td>All within 1 px</td><td>All within 0.5 px</td></tr>
             <tr><th scope="row"><code>int_press</code></th><td>Time from mousedown to mouseup</td><td>30 to 400 ms</td><td>10 to 30 ms</td><td>Under 10 ms on every click</td></tr>
-            <tr><th scope="row"><code>int_key_chain</code></th><td>Keydown, keypress, beforeinput, input and keyup for each character</td><td>Full chain</td><td>Keypress missing</td><td>Text with no keydown (insertText-style)</td></tr>
+            <tr><th scope="row"><code>int_key_chain</code></th><td>Keydown, beforeinput, input and keyup for each character (keypress is not judged)</td><td>Full chain</td><td>beforeinput, input or keyup missing</td><td>Text with no keydown (insertText-style)</td></tr>
             <tr><th scope="row"><code>int_value_source</code></th><td>Whether the value matches the typed keys</td><td>Matches the keys</td><td>Pasted</td><td>Value with no input events, or a value setter that is not native</td></tr>
             <tr><th scope="row"><code>int_key_rhythm</code></th><td>Variation and mean of the intervals between keys (8 or more)</td><td>Variation 0.15 or more, mean 60 ms or more</td><td>Variation 0.05 to 0.15</td><td>Variation under 0.05, or mean under 30 ms</td></tr>
             <tr><th scope="row"><code>int_dwell</code></th><td>How long each key was held</td><td>Median 40 to 250 ms, with spread</td><td>All identical</td><td>All 0 ms, or none recorded</td></tr>
@@ -103,7 +103,7 @@
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Pass:</strong> The task was completed and the evidence matched a person.</li>
-          <li><strong>Warning:</strong> The task was completed and something was unusual, such as a paste or a keypress that did not register.</li>
+          <li><strong>Warning:</strong> The task was completed and something was unusual, such as a paste, a missing key event, or screen coordinates equal to window coordinates on every click.</li>
           <li><strong>Not available:</strong> The task was not taken. That is a neutral result; the verdict is computed without it.</li>
       </ul>
       <p><strong>Provisional.</strong> While the thresholds are uncalibrated, the check is warn-only. A failing

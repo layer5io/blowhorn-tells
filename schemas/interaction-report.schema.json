@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "task", "click", "typing", "checks"],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "task": {
       "type": "object",
       "additionalProperties": false,
@@ -16,7 +16,6 @@
         "phraseLength": { "type": "integer", "minimum": 1 },
         "completed": { "type": "boolean" },
         "durationMs": { "type": ["number", "null"], "minimum": 0 },
-        "msToFirstInput": { "type": ["number", "null"], "minimum": 0 },
         "fullscreen": { "type": "boolean" }
       }
     },
@@ -31,7 +30,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["target", "isTrusted", "chain", "detail"],
+            "required": ["target", "isTrusted", "chain", "detail", "offsetFromCentre", "screenMinusClient"],
             "properties": {
               "target": { "enum": ["start", "submit"] },
               "isTrusted": { "type": "boolean" },

@@ -33,7 +33,7 @@ export function clickEvents({
   premove = { samples: 0, pathPx: 0, coalescedMin: null },
   pointerEvents = true
 }) {
-  const base = (type, offset, extra = {}) => ({ type, t: t + offset, target, isTrusted: trusted, hidden: false, hasFocus: true, ...extra });
+  const base = (type, offset, extra = {}) => ({ type, t: t + offset, target, isTrusted: trusted, ...extra });
   const position = { dx, dy, screenDx, screenDy };
   const events = [];
   if (pointerEvents) {
@@ -54,7 +54,7 @@ export function clickEvents({
 // only keydown and keyup are dispatched, as a script that fires keyboard events by hand does.
 function keystroke({ char, t, dwellMs, trusted = true, chain = true, inputType = "insertText" }) {
   const keyClass = char === " " ? "space" : "printable";
-  const base = (type, time, extra = {}) => ({ type, t: time, target: "phrase", isTrusted: trusted, hidden: false, hasFocus: true, ...extra });
+  const base = (type, time, extra = {}) => ({ type, t: time, target: "phrase", isTrusted: trusted, ...extra });
   const events = [base("keydown", t, { keyClass, repeat: false })];
   if (chain) {
     events.push(base("keypress", t, { keyClass }));
@@ -124,11 +124,11 @@ export function humanLike(seed = 7) {
 // el.value = phrase. Every event is untrusted, and no press precedes any click.
 export function scriptedElementClick() {
   const events = [
-    { type: "click", t: START_MS, target: "start", isTrusted: false, detail: 0, dx: -113.6, dy: -604.4, screenDx: 0, screenDy: 0, hidden: false, hasFocus: true }
+    { type: "click", t: START_MS, target: "start", isTrusted: false, detail: 0, dx: -113.6, dy: -604.4, screenDx: 0, screenDy: 0 }
   ];
   const typed = typedPhrase({ startT: START_MS + 2, dwell: () => 0, gap: () => 0, trusted: false, chain: false });
   events.push(...typed.events);
-  events.push({ type: "click", t: START_MS + 30, target: "submit", isTrusted: false, detail: 1, dx: -123.1, dy: -800.7, screenDx: 0, screenDy: 0, hidden: false, hasFocus: true });
+  events.push({ type: "click", t: START_MS + 30, target: "submit", isTrusted: false, detail: 1, dx: -123.1, dy: -800.7, screenDx: 0, screenDy: 0 });
   return { events, task: task(events, { valueMatches: true, valueSetterNative: true }) };
 }
 
@@ -147,8 +147,8 @@ export function dispatchedChains() {
 export function cdpClickNoMoves() {
   const start = clickEvents({ t: START_MS, pressMs: 2, screenDx: 2, screenDy: 84, premove: { samples: 1, pathPx: 0, coalescedMin: 1 } });
   const submit = clickEvents({ target: "submit", t: START_MS + 2400, pressMs: 2, screenDx: 2, screenDy: 84, premove: { samples: 1, pathPx: 0, coalescedMin: 1 } });
-  const text = [{ type: "beforeinput", t: START_MS + 1200, target: "phrase", isTrusted: true, inputType: "insertText", hidden: false, hasFocus: true },
-    { type: "input", t: START_MS + 1200, target: "phrase", isTrusted: true, inputType: "insertText", hidden: false, hasFocus: true }];
+  const text = [{ type: "beforeinput", t: START_MS + 1200, target: "phrase", isTrusted: true, inputType: "insertText" },
+    { type: "input", t: START_MS + 1200, target: "phrase", isTrusted: true, inputType: "insertText" }];
   const events = [...start, ...text, ...submit];
   return { events, task: task(events, { valueMatches: true, valueSetterNative: true }) };
 }
@@ -156,8 +156,8 @@ export function cdpClickNoMoves() {
 // A raw CDP insertText of the whole phrase: trusted text with no key presses at all.
 export function cdpInsertText() {
   const start = clickEvents({ t: START_MS, pressMs: 80, screenDx: 2, screenDy: 84, premove: { samples: 40, pathPx: 300, coalescedMin: 1 } });
-  const text = [{ type: "beforeinput", t: START_MS + 900, target: "phrase", isTrusted: true, inputType: "insertText", hidden: false, hasFocus: true },
-    { type: "input", t: START_MS + 900, target: "phrase", isTrusted: true, inputType: "insertText", hidden: false, hasFocus: true }];
+  const text = [{ type: "beforeinput", t: START_MS + 900, target: "phrase", isTrusted: true, inputType: "insertText" },
+    { type: "input", t: START_MS + 900, target: "phrase", isTrusted: true, inputType: "insertText" }];
   const submit = clickEvents({ target: "submit", t: START_MS + 1500, pressMs: 80, screenDx: 2, screenDy: 84, premove: { samples: 40, pathPx: 300, coalescedMin: 1 } });
   const events = [...start, ...text, ...submit];
   return { events, task: task(events, { valueMatches: true, valueSetterNative: true }) };

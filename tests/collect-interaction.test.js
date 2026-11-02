@@ -28,7 +28,16 @@ describe("buildInteractionReport", () => {
       expect(check.provisional).toBe(true);
       expect(check.observed.length).toBeGreaterThan(0);
     }
-    expect(report.schemaVersion).toBe(1);
+    expect(report.schemaVersion).toBe(2);
+  });
+
+  it("gives every click both its centre offset and its screen offset", () => {
+    const report = build(humanLike());
+    expect(report.click.clicks.length).toBeGreaterThan(0);
+    for (const click of report.click.clicks) {
+      expect(click.offsetFromCentre).toEqual({ dx: expect.any(Number), dy: expect.any(Number) });
+      expect(click.screenMinusClient).toEqual({ dx: expect.any(Number), dy: expect.any(Number) });
+    }
   });
 
   it("passes every check for a person-like run", () => {
@@ -129,7 +138,7 @@ describe("buildInteractionReport", () => {
       valueSetterNative: null,
       fullscreen: false
     });
-    expect(report.task).toMatchObject({ completed: false, durationMs: null, msToFirstInput: null });
+    expect(report.task).toMatchObject({ completed: false, durationMs: null });
     expect(new Set(report.checks.map((check) => check.status))).toEqual(new Set(["na"]));
   });
 });

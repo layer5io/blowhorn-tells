@@ -10,11 +10,6 @@ export function createInitialState(clock = performance) {
       motion: []
     },
     lastPointerSampleAt: 0,
-    challenge: {
-      started: false,
-      completed: false,
-      completedAtMs: null
-    },
     interaction: {
       startMs: null,
       endMs: null,

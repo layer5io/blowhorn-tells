@@ -14,7 +14,6 @@ export function setupChallenge(state, renderRuntime, runChecks) {
   startButton.addEventListener("click", () => {
     if (state.interaction.startMs !== null) return;
     state.interaction.startMs = nowMs();
-    state.challenge.started = true;
     status.textContent = `Click the field, type ${INTERACTION_PHRASE}, then press Submit.`;
     renderRuntime(state);
   });
@@ -48,8 +47,6 @@ export function setupChallenge(state, renderRuntime, runChecks) {
 
     state.interaction.report = report;
     window.__tellsInteraction = report;
-    state.challenge.completed = true;
-    state.challenge.completedAtMs = endMs;
     field.disabled = true;
     submitButton.disabled = true;
     status.textContent = "Interaction test complete. Checking the verdict now.";

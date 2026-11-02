@@ -4,8 +4,8 @@ import { evaluateInteractionChecks, INTERACTION_CHECK_IDS, INTERACTION_THRESHOLD
 // A minimal report in the schema shape. Each test changes only the numbers it is about.
 function report({ completed = true, durationMs = 2000, clicks = [click()], typing = {}, fullscreen = false } = {}) {
   return {
-    schemaVersion: 1,
-    task: { phraseLength: 14, completed, durationMs: completed ? durationMs : null, msToFirstInput: 40, fullscreen },
+    schemaVersion: 2,
+    task: { phraseLength: 14, completed, durationMs: completed ? durationMs : null, fullscreen },
     click: { clicks },
     typing: {
       counts: { keydown: 14, keypress: 14, beforeinput: 14, input: 14, keyup: 14, paste: 0 },
@@ -74,8 +74,8 @@ describe("interaction check thresholds", () => {
     expect(status(report({ clicks: [click({ detail: 0, isTrusted: false })] }), "int_click_detail")).toBe("na");
   });
 
-  it("int_screen_coords: equal on every click fails, differing passes, fullscreen is not judged", () => {
-    expect(status(report({ clicks: [click({ screenMinusClient: { dx: 0, dy: 0 } })] }), "int_screen_coords")).toBe("fail");
+  it("int_screen_coords: equal on every click warns, differing passes, fullscreen is not judged", () => {
+    expect(status(report({ clicks: [click({ screenMinusClient: { dx: 0, dy: 0 } })] }), "int_screen_coords")).toBe("warn");
     expect(status(report({ clicks: [click({ screenMinusClient: { dx: 0, dy: 0 } }), click({ screenMinusClient: { dx: 1, dy: 0 } })] }), "int_screen_coords")).toBe("pass");
     expect(status(report({ fullscreen: true, clicks: [click({ screenMinusClient: { dx: 0, dy: 0 } })] }), "int_screen_coords")).toBe("na");
   });
@@ -138,9 +138,11 @@ describe("interaction check thresholds", () => {
     expect(status(report({ typing: { dwellMs: { n: 14, mean: 400, median: 400, stdDev: 30, cv: 0.07, min: 300 } } }), "int_dwell")).toBe("warn");
   });
 
-  it("int_key_chain: text with no key presses fails, a missing keypress warns, a full chain passes", () => {
+  it("int_key_chain: text with no key presses fails, a missing beforeinput, input or keyup warns, keypress is not judged", () => {
     expect(status(report({ typing: { inputWithoutKeydown: 1 } }), "int_key_chain")).toBe("fail");
-    expect(status(report({ typing: { counts: { keydown: 14, keypress: 12, beforeinput: 14, input: 14, keyup: 14, paste: 0 } } }), "int_key_chain")).toBe("warn");
+    expect(status(report({ typing: { counts: { keydown: 14, keypress: 14, beforeinput: 14, input: 12, keyup: 14, paste: 0 } } }), "int_key_chain")).toBe("warn");
+    expect(status(report({ typing: { counts: { keydown: 14, keypress: 14, beforeinput: 14, input: 14, keyup: 13, paste: 0 } } }), "int_key_chain")).toBe("warn");
+    expect(status(report({ typing: { counts: { keydown: 14, keypress: 0, beforeinput: 14, input: 14, keyup: 14, paste: 0 } } }), "int_key_chain")).toBe("pass");
     expect(status(report(), "int_key_chain")).toBe("pass");
     expect(status(report({ typing: { counts: { keydown: 0, keypress: 0, beforeinput: 0, input: 0, keyup: 0, paste: 1 } } }), "int_key_chain")).toBe("na");
   });

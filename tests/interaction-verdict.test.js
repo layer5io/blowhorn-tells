@@ -15,8 +15,8 @@ function fromFixture({ events, task }) {
 // Every one of the 13 checks fails at once, with the numbers that make each fail.
 function allFailingReport() {
   return {
-    schemaVersion: 1,
-    task: { phraseLength: 14, completed: true, durationMs: 300, msToFirstInput: 10, fullscreen: false },
+    schemaVersion: 2,
+    task: { phraseLength: 14, completed: true, durationMs: 300, fullscreen: false },
     click: {
       clicks: [{
         target: "start",
@@ -93,14 +93,16 @@ describe("interaction scoring in the Worker", () => {
     expect(interactionReasons(scoreWith(abandoned))).toEqual([]);
   });
 
-  it("cannot make a verdict bot on its own: all 13 raw fails take 39 points and leave it suspicious", () => {
+  it("cannot make a verdict bot on its own: 12 raw fails and one warn take 37 points and leave it suspicious", () => {
     const report = allFailingReport();
     expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
     const verdict = scoreWith(report);
     const reasons = interactionReasons(verdict);
     expect(reasons).toHaveLength(13);
-    expect(new Set(reasons.map((reason) => reason.severity))).toEqual(new Set(["medium"]));
-    expect(verdict.score).toBe(61);
+    // int_screen_coords is a warn now (screen and client coordinates equal), so it costs 1 point at low severity.
+    expect(reasons.find((reason) => reason.id === "int_screen_coords").severity).toBe("low");
+    expect(new Set(reasons.filter((reason) => reason.id !== "int_screen_coords").map((reason) => reason.severity))).toEqual(new Set(["medium"]));
+    expect(verdict.score).toBe(63);
     expect(verdict.classification).toBe("suspicious");
   });
 });

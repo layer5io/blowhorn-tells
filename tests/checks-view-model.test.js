@@ -89,8 +89,7 @@ describe("checks table rows", () => {
   });
 
   it("marks checks with no data as not available, with the reason", () => {
-    const client = { ...goodClient, challenge: { completed: false } };
-    const rows = byName(buildCheckRows(report({ client, server: { ipIntel: { enabled: false } } })));
+    const rows = byName(buildCheckRows(report({ client: goodClient, server: { ipIntel: { enabled: false } } })));
     expect(rows["VPN / proxy / Tor intelligence"]).toMatchObject({ status: "na", label: "Not available", result: "lookup off" });
     expect(rows["Interaction"]).toMatchObject({ status: "na", result: "not taken" });
   });

@@ -22,12 +22,11 @@ export function buildInteractionReport(events, task) {
   const completed = task.completed === true && task.endMs != null && task.startMs != null;
 
   const report = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     task: {
       phraseLength: task.phraseLength ?? INTERACTION_PHRASE.length,
       completed,
       durationMs: completed ? round1(task.endMs - task.startMs) : null,
-      msToFirstInput: firstInputMs(onPhrase, task.startMs),
       fullscreen: task.fullscreen === true
     },
     click: { clicks: buildClicks(recorded) },
@@ -77,6 +76,7 @@ function describeClick(buffer) {
     pointerType: pointerDown && POINTER_TYPES.has(pointerDown.pointerType) ? pointerDown.pointerType : "",
     chain: buffer.map((event) => event.type),
     detail: click.detail ?? 0,
+    // Set on every pointer event on a task button (runtime.js), so both fields are always present.
     offsetFromCentre: { dx: click.dx, dy: click.dy },
     screenMinusClient: { dx: click.screenDx, dy: click.screenDy },
     pressMs: upIndex === -1 ? null : round1(buffer[upIndex].t - buffer[downIndex].t)
@@ -151,12 +151,6 @@ function buildTyping(onPhrase, untrusted, task) {
     intervalMs: stats(keyDownTimes.slice(1).map((time, index) => time - keyDownTimes[index])),
     dwellMs: stats(dwells)
   };
-}
-
-function firstInputMs(onPhrase, startMs) {
-  if (startMs == null) return null;
-  const first = onPhrase.find((event) => event.t >= startMs && ["keydown", "beforeinput", "input", "paste"].includes(event.type));
-  return first ? round1(first.t - startMs) : null;
 }
 
 function isTextInsert(inputType) {

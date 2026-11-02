@@ -43,7 +43,7 @@ describe("interaction report validator", () => {
     negative.task.durationMs = -1;
     expect(validateInteractionReport(negative)).toBe(false);
 
-    expect(validateInteractionReport({ ...validReport(), schemaVersion: 2 })).toBe(false);
+    expect(validateInteractionReport({ ...validReport(), schemaVersion: 1 })).toBe(false);
   });
 
   it("rejects a missing section", () => {

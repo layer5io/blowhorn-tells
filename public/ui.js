@@ -8,7 +8,7 @@ import {
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
 import { buildCheckRows } from "./checks-view-model.js";
-import { computeBehavior } from "./runtime.js";
+import { computeBehavior, interactionCompleted } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
 import { verdictVoice } from "./voice.js";
@@ -184,7 +184,7 @@ export function renderRuntime(state) {
 }
 
 function challengeStatus(state) {
-  return state.challenge.completed ? "complete" : state.challenge.started ? "in progress" : "not started";
+  return interactionCompleted(state) ? "complete" : state.interaction.startMs !== null ? "in progress" : "not started";
 }
 
 function updateHeroReadoutFromReport(report) {

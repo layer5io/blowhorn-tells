@@ -5,11 +5,12 @@ export const BEHAVIOR_CHECKPOINTS_MS = [1500, 4000, 7000, 10000, 15000];
 
 // The interaction test's three buttons. Only events on these elements are recorded for it.
 const INTERACTION_TARGETS = new Set(["start", "phrase", "submit"]);
-const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click", "focus", "blur", "keydown", "keypress", "keyup", "beforeinput", "input", "paste"];
+const INTERACTION_TYPES = ["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click", "focus", "keydown", "keypress", "keyup", "beforeinput", "input", "paste"];
 const INTERACTION_POINTER_TYPES = new Set(["pointerover", "pointerenter", "pointerdown", "mousedown", "pointerup", "mouseup", "click"]);
-const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus", "blur"]);
+const HOVER_TYPES = new Set(["pointerover", "pointerenter", "focus"]);
 const INTERACTION_KEY_TYPES = new Set(["keydown", "keypress", "keyup", "beforeinput", "input", "paste"]);
 const PREMOVE_WINDOW_MS = 1000;
+const PREMOVE_NEAR_PX = 200;
 const MAX_INTERACTION_EVENTS = 400;
 
 export function setupEventCapture(state) {
@@ -55,14 +56,17 @@ function inputContext(event) {
   return { isTrusted: event.isTrusted, hidden: document.hidden, hasFocus: document.hasFocus() };
 }
 
-// Keeps only the step length of each pointer move from the last 1 s. No coordinates are kept,
-// so the window can answer "how far did the pointer travel before this press" without storing the path.
+// Keeps each pointer move from the last 1 s in memory only: its client position, step length and
+// coalesced count. The positions stay in the page. The report carries only counts and path length
+// for the moves that count as premove (see pressPremove).
 function recordPointerTrail(state, event) {
   const interaction = state.interaction;
   const t = Math.round(performance.now() - state.startedAt);
   const last = interaction.lastMove;
   interaction.trail.push({
     t,
+    clientX: event.clientX,
+    clientY: event.clientY,
     isTrusted: event.isTrusted,
     pointerType: event.pointerType,
     coalesced: event.getCoalescedEvents?.().length ?? 0,
@@ -82,7 +86,7 @@ function recordInteraction(state, event) {
   if (INTERACTION_KEY_TYPES.has(event.type) && interaction.startMs === null) return;
 
   const t = Math.round(performance.now() - state.startedAt);
-  const record = { type: event.type, t, target, isTrusted: event.isTrusted, hidden: document.hidden, hasFocus: document.hasFocus() };
+  const record = { type: event.type, t, target, isTrusted: event.isTrusted };
   if (INTERACTION_POINTER_TYPES.has(event.type)) {
     const rect = element.getBoundingClientRect();
     record.dx = roundOne(event.clientX - (rect.left + rect.width / 2));
@@ -91,7 +95,7 @@ function recordInteraction(state, event) {
     record.screenDy = event.screenY - event.clientY;
   }
   if (event.type === "click") record.detail = event.detail;
-  if (event.type === "pointerdown") Object.assign(record, pressPremove(interaction, event.pointerType, t));
+  if (event.type === "pointerdown") Object.assign(record, pressPremove(interaction, event.pointerType, t, element.getBoundingClientRect()));
   if (event.type === "keydown" || event.type === "keypress" || event.type === "keyup") {
     record.keyClass = keyClass(event.key);
     record.repeat = event.repeat === true;
@@ -108,15 +112,32 @@ function evictInteractionEvent(events) {
   events.splice(hover === -1 ? 0 : hover, 1);
 }
 
-function pressPremove(interaction, pointerType, t) {
+// Counts the moves before a press that show the pointer heading for the pressed element: a move
+// within PREMOVE_NEAR_PX of it, or a move closer to it than the move before. Moves far away and
+// moving away are left out, so pointer wander elsewhere on the page does not count as premove.
+export function pressPremove(interaction, pointerType, t, rect) {
   const samples = interaction.trail.filter((sample) => sample.t >= t - PREMOVE_WINDOW_MS && sample.pointerType === pointerType);
-  const trusted = samples.filter((sample) => sample.isTrusted).map((sample) => sample.coalesced);
+  const counted = [];
+  let previous = null;
+  for (const sample of samples) {
+    const distance = distanceToRect(sample.clientX, sample.clientY, rect);
+    if (distance <= PREMOVE_NEAR_PX || (previous !== null && distance < previous)) counted.push(sample);
+    previous = distance;
+  }
+  const trusted = counted.filter((sample) => sample.isTrusted).map((sample) => sample.coalesced);
   return {
     pointerType,
-    premoveSamples: samples.length,
-    premovePathPx: roundOne(samples.reduce((sum, sample) => sum + sample.step, 0)),
+    premoveSamples: counted.length,
+    premovePathPx: roundOne(counted.reduce((sum, sample) => sum + sample.step, 0)),
     coalescedMin: trusted.length ? Math.min(...trusted) : null
   };
+}
+
+// Distance from a point to a rect, 0 when the point is inside it.
+function distanceToRect(x, y, rect) {
+  const dx = Math.max(rect.left - x, 0, x - rect.right);
+  const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+  return Math.hypot(dx, dy);
 }
 
 // Only the class of a key is kept: printable, space or control. The key itself is never stored.
@@ -209,7 +230,8 @@ export function computeBehavior(state, now = performance.now()) {
   if ((counts.keydown || 0) > 0) score += 0.08;
   if ((counts.scroll || 0) > 0) score += 0.08;
   if (rafStdDev > 0.3) score += 0.05;
-  if (state.challenge.completed) score += 0.16;
+  const challengeCompleted = interactionCompleted(state);
+  if (challengeCompleted) score += 0.16;
   if (elapsedMs > 3500 && Object.keys(counts).length === 0) score = 0.03;
 
   score = Math.max(0, Math.min(1, score));
@@ -223,10 +245,15 @@ export function computeBehavior(state, now = performance.now()) {
       pointerDistance: Math.round(pointerDistance),
       pointerSpeedStdDev: Math.round(speedStdDev * 10000) / 10000,
       rafStdDev: Math.round(rafStdDev * 1000) / 1000,
-      challengeCompleted: state.challenge.completed
+      challengeCompleted
     },
     recentEvents: state.events.slice(-30)
   };
+}
+
+// The interaction test counts as complete once its report says so. Used by the behavior score and the UI.
+export function interactionCompleted(state) {
+  return state.interaction.report?.task.completed === true;
 }
 
 function roundSensorValue(value) {
