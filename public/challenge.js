@@ -15,6 +15,7 @@ export function setupChallenge(state, renderRuntime, runChecks) {
   startButton.addEventListener("click", () => {
     if (state.interaction.startMs !== null) return;
     state.interaction.startMs = nowMs();
+    field.disabled = false;
     status.textContent = `Click the field, type ${INTERACTION_PHRASE}, then press Submit.`;
     renderRuntime(state);
   });

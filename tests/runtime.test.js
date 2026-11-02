@@ -275,14 +275,15 @@ describe("recordInteraction", () => {
     }
   });
 
-  it("records a character typed with AltGr as a typed key, though AltGr sets ctrlKey", () => {
+  it("records a character typed with AltGr as a typed key, though AltGr sets ctrlKey and altKey, and Ctrl or Alt with a key as a shortcut", () => {
     const { state, dispatch } = pageWithCapture();
     state.interaction.startMs = 1;
     const altGr = { ctrlKey: true, altKey: true, getModifierState: (name) => name === "AltGraph" };
     dispatch("keydown", "phrase", { key: "@", repeat: false, ...altGr });
     dispatch("keydown", "phrase", { key: "a", repeat: false, ctrlKey: true });
+    dispatch("keydown", "phrase", { key: "a", repeat: false, altKey: true });
 
-    expect(state.interaction.events.map((event) => event.keyClass)).toEqual(["printable", "control"]);
+    expect(state.interaction.events.map((event) => event.keyClass)).toEqual(["printable", "control", "control"]);
   });
 
   it("counts an event it has to drop when the buffer is full and nothing can be evicted", () => {
@@ -292,6 +293,21 @@ describe("recordInteraction", () => {
     dispatch("keydown", "phrase", { key: "a", repeat: false });
 
     expect(state.interaction.events).toHaveLength(400);
+    expect(state.interaction.dropped).toBe(1);
+  });
+
+  it("never evicts a key or text event: with no hover to drop, the new event is dropped and counted", () => {
+    const { state, dispatch } = pageWithCapture();
+    state.interaction.startMs = 0;
+    for (let index = 0; index < 200; index += 1) {
+      dispatch("keydown", "phrase", { key: "a", repeat: false });
+      dispatch("keyup", "phrase", { key: "a", repeat: false });
+    }
+    const first = state.interaction.events[0];
+    dispatch("keydown", "phrase", { key: "b", repeat: false });
+
+    expect(state.interaction.events).toHaveLength(400);
+    expect(state.interaction.events[0]).toBe(first);
     expect(state.interaction.dropped).toBe(1);
   });
 
@@ -354,6 +370,18 @@ describe("inputEvents", () => {
     const report = buildInteractionReport(state.interaction.events, { startMs: 1, endMs: 1e9, completed: false, valueMatches: false, valueSetterNative: true, fullscreen: false });
     expect(validateInteractionReport(report), JSON.stringify(validateInteractionReport.errors)).toBe(true);
     expect(JSON.stringify(report)).not.toMatch(/hidden|hasFocus/);
+  });
+
+  it("does not count trusted hovers on an unfocused or hidden page as input without focus or while hidden", () => {
+    const { state, dispatch } = pageWithCapture();
+    document.hasFocus = () => false;
+    document.hidden = true;
+    dispatch("pointerover", "submit", press);
+    dispatch("pointerenter", "submit", press);
+    dispatch("pointerover", "start", { ...press, isTrusted: false });
+
+    expect(collectTells(state).input).toEqual({ count: 3, untrusted: 1, trustedWhileHidden: 0, trustedWithoutFocus: 0 });
+    expect(state.interaction.events.every((event) => !("hidden" in event) && !("hasFocus" in event))).toBe(true);
   });
 
   it("counts a trusted event that reaches both buffers once", () => {

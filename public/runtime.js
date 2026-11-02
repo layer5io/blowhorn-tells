@@ -101,15 +101,16 @@ function recordInteraction(state, event) {
   // Once Start is armed, later clicks on it do nothing in challenge.js, so they are not recorded either.
   // The arming click's own pointer chain runs before challenge.js sets startMs, so it is still recorded.
   if (target === "start" && interaction.startMs !== null && INTERACTION_POINTER_TYPES.has(event.type)) return;
-  if (interaction.events.length >= MAX_INTERACTION_EVENTS && !evictInteractionEvent(interaction.events)) {
-    // Nothing left to evict: the event is lost, and challenge.js refuses to score a run that lost any.
+  if (interaction.events.length >= MAX_INTERACTION_EVENTS && !evictHover(interaction.events)) {
+    // No hover left to evict: the event is lost, and challenge.js refuses to score a run that lost any.
     interaction.dropped += 1;
     return;
   }
 
   const t = Math.round(performance.now() - state.startedAt);
   // hidden and hasFocus feed tells.input through inputEvents; buildInteractionReport does not send them.
-  const record = { type: event.type, t, target, ...inputContext(event) };
+  // Hovers carry neither: browsers deliver them to a visible window that is not focused.
+  const record = { type: event.type, t, target, ...(HOVER_TYPES.has(event.type) ? { isTrusted: event.isTrusted } : inputContext(event)) };
   if (INTERACTION_POINTER_TYPES.has(event.type)) {
     const rect = element.getBoundingClientRect();
     record.dx = roundOne(event.clientX - (rect.left + rect.width / 2));
@@ -138,14 +139,13 @@ export function inputEvents(state) {
   return [...state.events, ...state.interaction.events.filter((event) => !logged.has(stateLogCopyOf.get(event)))];
 }
 
-// Over the cap, drop the oldest hover or focus event first so the Start click chain survives a flood of hovers.
-// Then the oldest key or input event, so the Submit click chain survives heavy typing.
-// Pointer press and click events are never evicted. With none to drop, returns false and the new event is dropped instead.
-function evictInteractionEvent(events) {
+// Over the cap, drop the oldest hover or focus event, so a flood of hovers never fills the buffer. No chain
+// check needs them. Any other event would leave a hole, so with no hover to drop this returns false and the
+// new event is dropped and counted instead.
+function evictHover(events) {
   const index = events.findIndex((event) => HOVER_TYPES.has(event.type));
-  const victim = index === -1 ? events.findIndex((event) => INTERACTION_KEY_TYPES.has(event.type)) : index;
-  if (victim === -1) return false;
-  events.splice(victim, 1);
+  if (index === -1) return false;
+  events.splice(index, 1);
   return true;
 }
 
@@ -192,13 +192,13 @@ function distanceToRect(x, y, rect) {
 }
 
 // Only the class of a key is kept: printable, space, enter or control. The key itself is never stored.
-// A character pressed with Ctrl or Meta is a shortcut (Ctrl+V, Cmd+A), not typing. AltGr sets ctrlKey too, but types.
+// A character pressed with Ctrl, Meta or Alt is a shortcut (Ctrl+V, Cmd+A), not typing. AltGr sets ctrlKey and altKey too, but types.
 function keyClass(event) {
   const { key } = event;
   if (key === " ") return "space";
   if (key === "Enter") return "enter";
   if (typeof key !== "string" || key.length !== 1) return "control";
-  const shortcut = (event.ctrlKey || event.metaKey) && !event.getModifierState?.("AltGraph");
+  const shortcut = (event.ctrlKey || event.metaKey || event.altKey) && !event.getModifierState?.("AltGraph");
   return shortcut ? "control" : "printable";
 }
 
