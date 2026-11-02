@@ -212,7 +212,7 @@ describe("Interaction row", () => {
 
   it("passes a person-like run and says how long it took and what was judged", () => {
     const row = scoredWith(reportFrom(humanLike()))["Interaction"];
-    expect(row).toMatchObject({ status: "pass", label: "Pass", slug: "interaction" });
+    expect(row).toMatchObject({ status: "pass", label: "Pass", slug: "interaction", summary: "Typing and clicks look human" });
     expect(row.result).toMatch(/^\d+\.\d s from Start to Submit · 13 of 13 checks judged$/);
   });
 
@@ -220,6 +220,7 @@ describe("Interaction row", () => {
     const rows = scoredWith(reportFrom(scriptedElementClick()));
     expect(rows["Interaction"].status).toBe("warn");
     expect(rows["Interaction"].finding).toMatch(/^Interaction test: /);
+    expect(rows["Interaction"].summary).not.toMatch(/^Interaction test: /);
     expect(rows["Interaction"].status).not.toBe("fail");
   });
 
@@ -281,9 +282,43 @@ describe("verdict card fields", () => {
     for (const id of ids) expect(REASON_PLAIN, id).toHaveProperty([id]);
   });
 
-  it("uses the unavailable reason as the summary when a check did not run", () => {
-    const row = byName(buildCheckRows(report({ server: { ipIntel: { enabled: false } } })))["VPN / proxy / Tor intelligence"];
-    expect(row).toMatchObject({ status: "na", summary: "lookup off", result: "lookup off" });
+  it("says in a sentence why a check did not run, and keeps the short reason as result", () => {
+    const rows = byName(buildCheckRows(report({ client: null, server: { ipIntel: { enabled: false }, cloudflareBotManagement: { available: false } } })));
+    expect(rows["VPN / proxy / Tor intelligence"]).toMatchObject({ status: "na", summary: "IP reputation lookup is off", result: "lookup off" });
+    expect(rows["Managed bot score"]).toMatchObject({ status: "na", summary: "Cloudflare bot score not available", result: "Bot Management not active" });
+    expect(rows["TLS fingerprint"]).toMatchObject({ status: "na", summary: "TLS fingerprint not available" });
+    expect(rows["Browser data"]).toMatchObject({ status: "na", summary: "Not collected in this run", result: "not collected" });
+    expect(rows["Interaction"]).toMatchObject({ status: "na", summary: "Interaction test not taken", result: "not taken" });
+  });
+
+  it("writes every summary as a plain sentence: capitalised, no raw API name, no raw value", () => {
+    const rawApi = /navigator\.|window\.|document\.|performance\.|Function\.|isTrusted|\.prototype|webdriver:|JA[34] [a-z0-9]/;
+    const cases = [
+      report(),
+      report({ client: null, server: { ipIntel: { enabled: false } } }),
+      report({ server: { ipIntel: { error: "timeout", enabled: true } } }),
+      report({
+        client: { ...goodClient, browser: { ...goodClient.browser, webdriver: true } },
+        reasons: [
+          { id: "navigator_webdriver", severity: "high", message: "navigator.webdriver is true." },
+          { id: "client_headless_user_agent", severity: "high", message: "HeadlessChrome in navigator.userAgent." },
+          { id: "timezone_mismatch", severity: "medium", message: "Intl timezone differs." }
+        ]
+      })
+    ];
+    for (const entry of cases) {
+      const rows = buildCheckRows(entry);
+      for (const row of rows) {
+        expect(row.summary, row.name).toMatch(/^[A-Z0-9]/);
+        expect(row.summary, row.name).not.toMatch(rawApi);
+      }
+      for (const line of buildVerdictGroupLines(rows)) expect(line.sentence, line.key).not.toMatch(rawApi);
+    }
+  });
+
+  it("says WebDriver detected on a passing row whose flag is set", () => {
+    const client = { ...goodClient, browser: { ...goodClient.browser, webdriver: true } };
+    expect(byName(buildCheckRows(report({ client })))["Browser data"]).toMatchObject({ status: "pass", summary: "WebDriver detected" });
   });
 
   it("gives every row a non-empty plain summary", () => {
@@ -316,13 +351,19 @@ describe("verdict group lines", () => {
     expect(lines.automation).toMatchObject({ status: "pass", symbol: "✓", statusLabel: "Pass", sentence: "none found" });
   });
 
-  it("names the first automation flag and counts the rest", () => {
+  it("names a single automation flag on its own", () => {
+    const lines = lineFor([row("Browser data", "automation", "fail", "WebDriver detected"), row("Managed bot score", "automation", "pass", "Cloudflare bot score is not low")]);
+    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "WebDriver detected" });
+  });
+
+  it("counts several automation flags and lists them, later ones in lower case unless a name", () => {
     const lines = lineFor([
       row("Browser data", "automation", "fail", "WebDriver detected"),
-      row("Remote-control tells", "automation", "warn", "Automation global found"),
+      row("Browser data 2", "automation", "fail", "Headless browser detected"),
+      row("Remote-control tells", "automation", "warn", "WebDriver flag patched"),
       row("Managed bot score", "automation", "pass", "Cloudflare bot score is not low")
     ]);
-    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "2 flags: WebDriver detected, Automation global found" });
+    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "3 flags: WebDriver detected, headless browser detected, WebDriver flag patched" });
   });
 
   it("uses the first clean behaviour sentence when nothing is flagged, and the concern when something is", () => {
@@ -330,19 +371,20 @@ describe("verdict group lines", () => {
     expect(lineFor([row("Behavioural classification", "behavior", "warn", "Pointer and key input are borderline")]).behavior).toMatchObject({ status: "warn", symbol: "!", sentence: "Pointer and key input are borderline" });
   });
 
-  it("counts fingerprint inconsistencies out of the judged checks and lists them", () => {
+  it("lists fingerprint concerns by their plain summaries, never by check name", () => {
     const lines = lineFor([
-      row("Request profile", "fingerprint", "warn", "Timezone differs."),
-      row("Browser data", "fingerprint", "fail", "Plugin list is impossible."),
+      row("Request profile", "fingerprint", "warn", "Timezone does not match the IP location"),
+      row("Browser fingerprint", "fingerprint", "fail", "No WebGL graphics support"),
       row("Latency", "fingerprint", "pass", "Round-trip times look ordinary"),
-      row("TLS fingerprint", "fingerprint", "na", "no JA4 or JA3 fingerprint")
+      row("TLS fingerprint", "fingerprint", "na", "TLS fingerprint not available")
     ]);
-    expect(lines.fingerprint).toMatchObject({ status: "fail", sentence: "2 of 3 inconsistent: Request profile, Browser data" });
-    expect(lineFor([row("Latency", "fingerprint", "pass", "x")]).fingerprint.sentence).toBe("All 1 check agrees");
+    expect(lines.fingerprint).toMatchObject({ status: "fail", sentence: "2 concerns: Timezone does not match the IP location, no WebGL graphics support" });
+    expect(lineFor([row("Latency", "fingerprint", "pass", "x")]).fingerprint.sentence).toBe("1 check agrees");
+    expect(lineFor([row("Latency", "fingerprint", "pass", "x"), row("Request profile", "fingerprint", "pass", "y")]).fingerprint.sentence).toBe("All 2 checks agree");
   });
 
   it("reports a group with no judged rows as not checked, with n/a status", () => {
-    const line = lineFor([row("Interaction", "behavior", "na", "not taken")]).behavior;
+    const line = lineFor([row("Interaction", "behavior", "na", "Interaction test not taken")]).behavior;
     expect(line).toMatchObject({ status: "na", symbol: "–", statusLabel: "Not available", sentence: "Not checked in this run" });
     expect(lineFor([]).automation).toMatchObject({ status: "na", sentence: "Not checked in this run" });
   });

@@ -45,7 +45,7 @@ const CHECKS = [
     slug: "datacenter-pattern",
     reasons: ["datacenter_asn_heuristic"],
     available: ({ server }) => Boolean(server.datacenterHeuristic?.organization || server.cf?.asOrganization),
-    unavailable: () => "no network owner reported",
+    unavailable: () => na("no network owner reported", "Network owner not reported"),
     observe: ({ server }) => {
       const heuristic = server.datacenterHeuristic || {};
       const org = heuristic.organization || server.cf?.asOrganization;
@@ -60,7 +60,7 @@ const CHECKS = [
     slug: "vpn-proxy-tor",
     reasons: ["ip_vpn", "ip_proxy", "ip_tor", "ip_datacenter", "ip_crawler", "ip_abuser", "ipqs_high_fraud_score"],
     available: ({ server }) => server.ipIntel?.enabled === true && !server.ipIntel?.error,
-    unavailable: ({ server }) => server.ipIntel?.error ? "lookup failed" : "lookup off",
+    unavailable: ({ server }) => server.ipIntel?.error ? na("lookup failed", "IP reputation lookup failed") : na("lookup off", "IP reputation lookup is off"),
     observe: ({ server }) => {
       const flags = server.ipIntel?.normalized || {};
       const raised = [["VPN", flags.isVpn], ["proxy", flags.isProxy], ["Tor", flags.isTor], ["hosting", flags.isDatacenter], ["crawler", flags.isCrawler], ["abuser", flags.isAbuser]]
@@ -76,7 +76,7 @@ const CHECKS = [
     slug: "managed-bot-score",
     reasons: ["managed_bot_score_low", "managed_bot_score_borderline", "cloudflare_verified_bot"],
     available: ({ server }) => server.cloudflareBotManagement?.available === true,
-    unavailable: () => "Bot Management not active",
+    unavailable: () => na("Bot Management not active", "Cloudflare bot score not available"),
     observe: ({ server }) => {
       const bot = server.cloudflareBotManagement;
       return join([`score ${bot.score ?? "n/a"} of 99`, bot.verifiedBot ? "verified bot" : null]);
@@ -89,7 +89,7 @@ const CHECKS = [
     slug: "tls-fingerprint",
     reasons: [],
     available: ({ server }) => Boolean(server.cloudflareBotManagement?.ja4 || server.cloudflareBotManagement?.ja3Hash),
-    unavailable: () => "no JA4 or JA3 fingerprint",
+    unavailable: () => na("no JA4 or JA3 fingerprint", "TLS fingerprint not available"),
     observe: ({ server }) => {
       const bot = server.cloudflareBotManagement;
       return join([server.cf?.tlsVersion, bot.ja4 ? `JA4 ${bot.ja4}` : `JA3 ${bot.ja3Hash}`]);
@@ -98,7 +98,7 @@ const CHECKS = [
   {
     name: "Browser data",
     group: "automation",
-    pass: ({ client }) => client?.browser?.webdriver === true ? "WebDriver flag is set" : "WebDriver not detected",
+    pass: ({ client }) => client?.browser?.webdriver === true ? "WebDriver detected" : "WebDriver not detected",
     slug: "browser-data",
     reasons: ["navigator_webdriver", "client_headless_user_agent", "empty_plugins_chromium", "plugin_reference_mismatch", "plugin_item_overflow", "prototype_getter_not_native", "screen_viewport_impossible", "mobile_touch_mismatch", "notification_permission_default_state", "notification_permission_contradiction"],
     available: ({ client }) => Boolean(client?.browser),
@@ -154,7 +154,7 @@ const CHECKS = [
     slug: "performance-memory",
     reasons: ["performance_memory_anomaly"],
     available: ({ client }) => (client?.network?.ping?.memorySamples || []).some((sample) => sample?.supported),
-    unavailable: () => "not exposed by this browser",
+    unavailable: () => na("not exposed by this browser", "Heap readings not exposed by this browser"),
     observe: ({ client }) => {
       const samples = client.network.ping.memorySamples.filter((sample) => sample?.supported);
       const last = samples[samples.length - 1];
@@ -187,7 +187,7 @@ const CHECKS = [
     slug: "webrtc-clues",
     reasons: ["webrtc_public_ip_mismatch"],
     available: ({ client }) => client?.network?.webrtc?.supported !== false && (client?.network?.webrtc?.candidates || []).length > 0,
-    unavailable: ({ client }) => client?.network?.webrtc?.supported === false ? "not supported" : "no candidates (blocked or offline)",
+    unavailable: ({ client }) => client?.network?.webrtc?.supported === false ? na("not supported", "WebRTC not supported") : na("no candidates (blocked or offline)", "WebRTC found no addresses"),
     observe: (report) => buildWebRtcComparison(report).Status
   },
   {
@@ -236,12 +236,12 @@ const CHECKS = [
   {
     name: "Interaction",
     group: "behavior",
-    pass: "Test input arrived like a person's",
+    pass: "Typing and clicks look human",
     slug: "interaction",
     reasons: INTERACTION_CHECK_IDS,
     // A completed test whose checks are all not-judged has no evidence either, so it reads as not taken.
     available: ({ client }) => client?.interaction?.task?.completed === true && (client.interaction.checks || []).some((check) => check.status !== "na"),
-    unavailable: () => "not taken",
+    unavailable: () => na("not taken", "Interaction test not taken"),
     observe: ({ client }) => {
       const checks = client.interaction.checks || [];
       const judged = checks.filter((check) => check.status !== "na").length;
@@ -264,7 +264,8 @@ export function buildCheckRows(report) {
     .map((check) => {
       const available = check.available ? check.available(context) : true;
       if (!available) {
-        return row(check, "na", check.unavailable ? check.unavailable(context) : "not collected", null);
+        const missing = check.unavailable ? check.unavailable(context) : NOT_COLLECTED;
+        return row(check, "na", missing.result, null, missing.summary);
       }
       const matched = reasons
         .filter((reason) => check.reasons.includes(reason.id))
@@ -274,18 +275,26 @@ export function buildCheckRows(report) {
       let finding = worst ? `${worst.message}${matched.length > 1 ? ` (+${matched.length - 1} more)` : ""}` : null;
       const extra = status === "pass" && check.extraStatus ? check.extraStatus(context) : null;
       if (extra) ({ status, finding } = extra);
-      const plain = extra?.summary || (worst ? REASON_PLAIN[worst.id] || CHECK_CONCERN[check.name] : null);
       const observed = safeObserve(check, context, matched);
-      if (!observed && !worst) return row(check, "na", "no data returned", null);
-      return row(check, status, observed || "no data returned", finding, context, plain);
+      if (!observed && !worst) return row(check, "na", NO_DATA.result, null, NO_DATA.summary);
+      const summary = status === "pass" ? passSummary(check, context) : (worst && REASON_PLAIN[worst.id]) || CHECK_CONCERN[check.name];
+      return row(check, status, observed || NO_DATA.result, finding, summary);
     });
 }
 
+// A check that could not run: result is the short raw reason (details only), summary the plain sentence.
+function na(result, summary) {
+  return { result, summary };
+}
+
+const NOT_COLLECTED = na("not collected", "Not collected in this run");
+const NO_DATA = na("no data returned", "No data returned");
+
 // result is the raw observed value and finding the server's own message: both go in the details only.
-// summary is the plain-language result, the only text the list and the verdict card show. It is the
-// check's pass sentence, the phrase for the worst reason that fired, or the check's concern.
-function row(check, status, result, finding, context = null, plain = null) {
-  const summary = status === "na" ? result : status === "pass" ? passSummary(check, context) : plain || CHECK_CONCERN[check.name];
+// summary is the plain-language result: the second line of the row in Checks performed, and the text
+// the verdict card's group lines quote. It is the check's pass sentence, the phrase for the worst
+// reason that fired, the check's concern, or the plain reason a check could not run.
+function row(check, status, result, finding, summary) {
   return { name: check.name, group: check.group, status, ...CHECK_STATUS[status], result, summary, finding, slug: check.slug || null };
 }
 
@@ -434,7 +443,9 @@ export const CHECK_GROUPS = [
 
 const STATUS_RANK = { fail: 3, warn: 2, pass: 1, na: 0 };
 
-// One line per group for the verdict card, derived from the same rows the checks list shows.
+// One line per group for the verdict card, derived from the same rows the checks list shows. The
+// sentence quotes row summaries only, so it is as plain as they are:
+//   "none found" / "WebDriver detected" / "2 flags: WebDriver detected, headless browser detected".
 // judged = rows that produced a result (not n/a); flagged = judged rows that failed or warned.
 export function buildVerdictGroupLines(rows) {
   return CHECK_GROUPS.map(({ key, label }) => {
@@ -454,18 +465,20 @@ export function buildVerdictGroupLines(rows) {
   });
 }
 
+const GROUP_FLAG_NOUN = { automation: "flags", behavior: "concerns", fingerprint: "concerns" };
+
 function groupSentence(key, judged, flagged) {
   if (!judged.length) return "Not checked in this run";
-  if (key === "fingerprint") {
-    return flagged.length
-      ? `${flagged.length} of ${judged.length} inconsistent: ${flagged.map((row) => row.name).join(", ")}`
-      : `All ${judged.length} ${judged.length === 1 ? "check agrees" : "checks agree"}`;
-  }
-  if (key === "automation") {
-    if (!flagged.length) return "none found";
-    return flagged.length === 1 ? flagged[0].summary : `${flagged.length} flags: ${flagged.map((row) => row.summary).join(", ")}`;
-  }
-  // Behavior: the first concern, or the first clean result when nothing is flagged.
-  if (!flagged.length) return judged[0].summary;
-  return flagged.length === 1 ? flagged[0].summary : `${flagged.length} concerns: ${flagged.map((row) => row.summary).join(", ")}`;
+  if (flagged.length === 1) return flagged[0].summary;
+  if (flagged.length > 1) return `${flagged.length} ${GROUP_FLAG_NOUN[key]}: ${listSummaries(flagged)}`;
+  if (key === "automation") return "none found";
+  if (key === "fingerprint") return judged.length === 1 ? "1 check agrees" : `All ${judged.length} checks agree`;
+  // Behavior: the first clean result, which says what was judged ("Pointer and key timing look human").
+  return judged[0].summary;
+}
+
+// "WebDriver detected, headless browser detected": the first summary as written, the rest in lower
+// case unless their first word is a name or an acronym (WebDriver, VPN, TLS keep their capitals).
+function listSummaries(rows) {
+  return rows.map((row, i) => (i > 0 && /^[A-Z][a-z]*\b/.test(row.summary) ? row.summary[0].toLowerCase() + row.summary.slice(1) : row.summary)).join(", ");
 }

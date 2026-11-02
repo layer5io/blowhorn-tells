@@ -11,7 +11,8 @@
     "check": "pnpm build:validators && for file in src/*.js public/*.js; do node --check \"$file\"; done",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:all": "pnpm check && pnpm test && pnpm test:e2e"
+    "test:all": "pnpm check && pnpm test && pnpm test:e2e",
+    "contrast": "node scripts/contrast.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

@@ -8,13 +8,13 @@ import {
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
 import { buildCheckRows, buildVerdictGroupLines, CHECK_GROUPS } from "./checks-view-model.js";
-
-// One variant per group. The three groups stack, so each differs from the one above and below it.
-const CHECK_GROUP_VARIANT = { automation: "card-field", behavior: "card-stamp", fingerprint: "card-plain" };
 import { computeBehavior, interactionCompleted } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
 import { verdictVoice, verdictWord } from "./voice.js";
+
+// One variant per group. The three groups stack, so each differs from the one above and below it.
+const CHECK_GROUP_VARIANT = { automation: "card-field", behavior: "card-stamp", fingerprint: "card-plain" };
 
 export function renderReport(state, report, options = {}) {
   const verdict = report.verdict || {};
@@ -85,16 +85,21 @@ function renderChecks(report) {
 }
 
 function renderCheckItem(row) {
+  const status = escapeHtml(row.status);
   const observed = row.result && row.result !== row.summary ? `<p class="check-detail-line"><span class="check-detail-label">Observed</span> <code>${escapeHtml(row.result)}</code></p>` : "";
-  const finding = row.finding ? `<p class="check-detail-line check-finding-${escapeHtml(row.status)}">${escapeHtml(row.finding)}</p>` : "";
+  const finding = row.finding ? `<p class="check-detail-line">${escapeHtml(row.finding)}</p>` : "";
   const about = row.slug ? `<a class="check-about" href="/checks/${escapeHtml(row.slug)}/">What this check means</a>` : "";
+  // The row itself carries no status styling: the icon and the word next to the name say it.
   return `
-    <li class="check-item check-${escapeHtml(row.status)}">
+    <li class="check-item">
       <details>
         <summary>
-          <span class="check-icon check-${escapeHtml(row.status)}" role="img" aria-label="${escapeHtml(row.label)}">${escapeHtml(row.symbol)}</span>
+          <span class="check-icon check-${status}" aria-hidden="true">${escapeHtml(row.symbol)}</span>
           <span class="check-text">
-            <span class="check-name">${escapeHtml(row.name)}</span>
+            <span class="check-head">
+              <span class="check-name">${escapeHtml(row.name)}</span>
+              <span class="check-state check-${status}">${escapeHtml(row.label)}</span>
+            </span>
             <span class="check-summary">${escapeHtml(row.summary)}</span>
           </span>
         </summary>

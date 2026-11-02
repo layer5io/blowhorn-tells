@@ -54,6 +54,10 @@ make test    # syntax check, unit tests, Worker end-to-end tests
 
 Service Worker checks need a secure context; `localhost` counts as one in current browsers.
 
+`pnpm contrast` prints the WCAG contrast of the pass, warn and fail colours on every surface, in the dark and light themes and inside the dispatch card. `tests/contrast.test.js` holds them to AA (4.5:1 for text, 3:1 for icons and borders). In the light theme, warn text and icons use `--warn-ink`; `--warn` is for borders and the gauge only.
+
+The card variants (`card-paper`, `card-dispatch`, `card-stamp`, `card-field`, `card-plain`) come from the shared stylesheet at `https://blowhorn.ai/assets/brand/cards.css`, which `public/index.html` links rather than copies. The dispatch card is near-black in both themes, so `public/styles.css` gives it the dark token set. The end-to-end tests stub that stylesheet so they never depend on the network.
+
 ## Deploy
 
 `master` deploys through `.github/workflows/deploy.yml` when the repository has `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. Without them the workflow says so and deploys nothing. The Worker serves the `tells.blowhorn.ai` custom domain (`wrangler.json`).

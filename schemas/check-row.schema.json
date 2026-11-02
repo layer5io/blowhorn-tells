@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tells.blowhorn.ai/schemas/v1/check-row.schema.json",
   "title": "Check row",
-  "description": "One row of the checks as returned by buildCheckRows(): what a check observed and its pass, warn, fail or not-available status. summary is the plain-language result shown in the Checks performed list and, through buildVerdictGroupLines(), in the verdict card group lines; it never names a raw API. result (the raw observed value) and finding (the server message) appear only in each row's details.",
+  "description": "One row of the checks as returned by buildCheckRows(): what a check observed and its pass, warn, fail or not-available status. summary is the only row text shown outside the details; it never names a raw API. result (the raw observed value) and finding (the server message) appear only inside each row's expanded details on the result page.",
   "type": "object",
   "additionalProperties": false,
   "required": ["name", "slug", "group", "status", "symbol", "label", "result", "summary", "finding"],
@@ -14,7 +14,7 @@
     "symbol": { "type": "string", "minLength": 1 },
     "label": { "type": "string", "minLength": 1 },
     "result": { "type": "string" },
-    "summary": { "type": "string", "minLength": 1, "description": "Plain-language result: the row text in Checks performed and the group line on the verdict card." },
+    "summary": { "type": "string", "minLength": 1, "description": "Plain-language result in sentence case, never a raw API name or value (\"WebDriver detected\", \"WebDriver not detected\", \"1 of 10 extensions visible\", \"IP reputation lookup is off\"). Shown in two places on the result page: as the second line of the row, under the check name and its status word, in the Checks performed list (#checksGroups); and on the verdict card (#verdictGroups), where buildVerdictGroupLines() quotes the summary of each failed or warned row in its group line (\"Automation flags: WebDriver detected\"; with more than one, \"2 flags: WebDriver detected, headless browser detected\"), or for the Behavior group with nothing flagged, the first judged row's summary. Not shown on the per-check pages under /checks/." },
     "finding": { "type": ["string", "null"] }
   }
 }

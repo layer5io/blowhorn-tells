@@ -1,5 +1,13 @@
 :root {
   color-scheme: dark light;
+  font-family: var(--sans);
+}
+
+/* The dark token set. The dispatch card (cards.css) is near-black in both themes, so it
+   carries these tokens in the light theme too: anything inside it that reads --ink,
+   --good, --warn-ink and so on stays legible without a per-component override. */
+:root,
+.card-dispatch {
   --teal: #00B39F;
   --teal-bright: #00D3A9;
   --teal-shade: #008F80;
@@ -65,8 +73,9 @@
   --accent-2: var(--yellow);
   --accent-3: var(--teal);
   --shadow: var(--glass-shadow);
-  font-family: var(--sans);
 }
+
+.card-dispatch { color-scheme: dark; }
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -95,11 +104,12 @@
     --good: #00756A;
     --warn: #8A6C00;
     --bad: #C42B3C;
-    /* Warn as text and icons on light surfaces: #8A6C00 is 4.3:1 on the warn tint, this is 6.1:1 or better. */
+    /* Warn as text and icons. --warn (#8A6C00) is under 4.5:1 on --surface-raised and the
+       yellow ambient wash, so text and icons use this; --warn stays for borders and the gauge. */
     --warn-ink: #6E5600;
     --subtle: #5B6A70;
     --accent: var(--teal-deep);
-    --accent-2: #8A6C00;
+    --accent-2: var(--warn);
   }
 }
 
@@ -1357,7 +1367,9 @@ input[type="checkbox"] {
 .check-na { color: var(--subtle); }
 
 
-/* Checks performed: three groups, each row a disclosure (the check name and its plain summary). */
+/* Checks performed: three groups, each row a disclosure (the check name, its status word and its
+   plain summary). Rows are plain list rows with a hairline between them: the status lives in the
+   icon and the word only, never in a row fill or border. */
 .check-group + .check-group { margin-top: 20px; }
 
 .check-group h3 {
@@ -1415,12 +1427,30 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
+.check-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+
 .check-name {
   color: var(--ink);
   font-size: 0.92rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+/* The status word beside the icon. Text, so n/a takes --ink-muted: --subtle is a 3:1 graphic colour. */
+.check-state {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.check-state.check-na { color: var(--ink-muted); }
 
 .check-summary {
   color: var(--ink-soft);
@@ -1455,8 +1485,6 @@ input[type="checkbox"] {
   text-transform: uppercase;
 }
 
-.check-finding-fail { color: var(--bad); }
-.check-finding-warn { color: var(--warn-ink); }
 
 /* Documentation pages (agents guide, check guide): a narrower reading column. */
 .doc-page {
