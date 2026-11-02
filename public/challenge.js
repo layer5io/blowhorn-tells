@@ -60,12 +60,9 @@ export function setupChallenge(state, renderRuntime, runChecks) {
     window.__tellsInteraction = report;
     field.disabled = true;
     submitButton.disabled = true;
-    status.textContent = "Interaction test complete. Checking the verdict now.";
     renderRuntime(state);
     // Intentional: the checks run on their own after Submit, so the verdict needs no extra press.
-    runChecks(state).then((scored) => {
-      if (scored === true) status.textContent = "Interaction test complete. The verdict is shown above.";
-      if (scored === false) status.textContent = "The verdict could not be scored. Press Run the inspection to send the interaction test again.";
-    });
+    // runChecks writes the status line from each run's outcome.
+    runChecks(state);
   });
 }
