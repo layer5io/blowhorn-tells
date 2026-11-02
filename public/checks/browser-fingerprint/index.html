@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>Browser fingerprint</h1>
     <p class="lede">Canvas, graphics and fonts: the near-unique sketch of this browser.</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>Ask a browser to draw the same picture twice and it produces a result
           shaped by its graphics stack, its GPU and its installed fonts. This check renders
@@ -57,7 +58,7 @@
           reports the GPU it found along the way.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>A canvas rendering and its hash</li>
@@ -66,7 +67,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Warning:</strong> WebGL is unavailable, or the canvas probe failed or was blocked. Real browsers almost always can do both; missing graphics is a property of stripped-down or synthetic environments.</li>
@@ -74,7 +75,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>Fingerprints rarely accuse anyone of being a bot directly. Their power is
           correlation: the same fingerprint across fifty accounts ties the accounts together,
@@ -82,7 +83,7 @@
           operations care about fingerprints because rotating IPs and cookies is easy, while
           rotating convincing hardware stories is not.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>Across the platforms Blowhorn works with, rated in the
         <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
@@ -94,7 +95,7 @@
       </ul>
       <p>Everywhere else in the set this one rates Low.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-browser">Browser</a> section. The same findings appear in the
@@ -110,7 +111,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

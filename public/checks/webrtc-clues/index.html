@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>WebRTC network clues</h1>
     <p class="lede">The addresses your browser volunteers for voice and video.</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>WebRTC, the browser's calling technology, discovers network addresses it
           could be reached at and shares them with the page so calls can connect. Those
@@ -58,7 +59,7 @@
           exposes and compares it with the address the HTTP request arrived from.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>WebRTC ICE candidates gathered in the page (via a public STUN server)</li>
@@ -66,7 +67,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Fail:</strong> WebRTC exposed a public IP that differs from the request IP: the connection claims one address while the browser volunteers another.</li>
@@ -75,7 +76,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>This is the classic proxy leak, and it cuts both ways. For a person using a
           VPN for privacy, it is a genuine exposure worth knowing about. For an automated
@@ -83,7 +84,7 @@
           the browser's own calling stack names another. Sites that run WebRTC probes treat
           a mismatch as one of the strongest single signals available to them.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>On the platforms Blowhorn works with, this tell rates <strong>Low everywhere</strong>:
         none of LinkedIn, X, Reddit, GitHub, Slack, Bluesky or Hacker News has public evidence
@@ -93,7 +94,7 @@
         this row without announcing it. The full reasoning is in the
         <a href="/checks/platforms/">platform guide</a>.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-webrtc">WebRTC comparison</a> section. The same findings appear in the
@@ -109,7 +110,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

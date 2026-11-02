@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>Request profile</h1>
     <p class="lede">Does the request introduce itself the way a real browser does?</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>Every request a browser makes introduces itself before any page loads: a
           User-Agent, a set of headers, client hints about the platform, a protocol. This check
@@ -58,7 +59,7 @@
           client usually gets at least one line of the story wrong.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>The User-Agent and the full header set of the request that fetched the page</li>
@@ -68,7 +69,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Fail:</strong> No User-Agent at all, an automation or HTTP-library User-Agent, or a request User-Agent that differs from the one the browser reports about itself.</li>
@@ -78,14 +79,14 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>This is the oldest gate in bot detection, and it runs before a single line of
           JavaScript. Whole classes of automation (raw HTTP clients, misconfigured headless
           setups, spoofers who patch the page but not the wire) are turned away here. Sites
           also lean on it because it is cheap: the answer is already in the request.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>Across the platforms Blowhorn works with, rated in the
         <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
@@ -98,7 +99,7 @@
       </ul>
       <p>Everywhere else in the set this one rates Low.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-server-ip">Server / IP</a> section. The same findings appear in the
@@ -114,7 +115,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

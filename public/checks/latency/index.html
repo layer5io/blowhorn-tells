@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>Latency</h1>
     <p class="lede">Two clocks that should roughly agree.</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>This check times the same conversation two ways: how long the browser
           takes to fetch from the server's edge, measured inside the page, and how long the
@@ -57,7 +58,7 @@
           it claims to sit, the two numbers live in the same neighbourhood.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>The median browser-to-edge fetch time measured in the page</li>
@@ -65,7 +66,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Warning:</strong> The browser's measured latency is far higher than the handshake's: something (a remote browser, a relay, an extra hop) is between the page and the connection it arrived on.</li>
@@ -73,7 +74,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>Latency disagreement is a soft signal with a hard cause. A browser driven
           remotely, streamed from a data centre, or tunnelled through relays cannot make
@@ -81,7 +82,7 @@
           because the extra distance is real. On its own it proves little; next to a
           datacenter finding it corroborates the story.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>Across the platforms Blowhorn works with, rated in the
         <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
@@ -92,7 +93,7 @@
       </ul>
       <p>Everywhere else in the set this one rates Low.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-resources">Resource timing</a> section. The same findings appear in the
@@ -108,7 +109,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

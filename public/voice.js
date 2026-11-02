@@ -35,6 +35,19 @@ export function verdictVoice(classification) {
   return { ...voice, figure: FIGURES[voice.figure] };
 }
 
+// The verdict card's one-word readout. Keys match the classification the server returns
+// (score 75 and up is likely_human, 45 to 74 suspicious, under 45 likely_bot; see src/report-verdict.js).
+const VERDICT_WORDS = {
+  pending: "In progress",
+  likely_human: "Looks human",
+  suspicious: "Hard to tell",
+  likely_bot: "Looks like a bot"
+};
+
+export function verdictWord(classification) {
+  return VERDICT_WORDS[classification] || VERDICT_WORDS.pending;
+}
+
 export function failureVoice(message) {
   return {
     ...VERDICTS.pending,

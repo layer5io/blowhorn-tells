@@ -1,6 +1,5 @@
 import { createServer } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { extensionDotTone } from "../public/ui.js";
 import { copyWebIdl } from "../public/utils.js";
 import { fetchWithTimeout } from "../src/fetch-with-timeout.js";
 import { readJsonBody } from "../src/http.js";
@@ -109,18 +108,5 @@ describe("WebIDL copy", () => {
     expect(JSON.stringify(new AdapterInfo())).toBe("{}");
     expect(copyWebIdl(new AdapterInfo())).toEqual({ vendor: "apple", architecture: "metal-3", maxBufferSize: "4294967296" });
     expect(copyWebIdl(null)).toBeNull();
-  });
-});
-
-describe("extension scanner dot", () => {
-  it("stays muted until probes report", () => {
-    expect(extensionDotTone(undefined)).toBe("muted");
-    expect(extensionDotTone("n/a")).toBe("muted");
-    expect(extensionDotTone("pending")).toBe("muted");
-  });
-
-  it("is good with no hits and a warning with any", () => {
-    expect(extensionDotTone("0/12")).toBe("good");
-    expect(extensionDotTone("2/12")).toBe("warn");
   });
 });

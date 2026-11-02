@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -50,7 +51,7 @@
     <p class="lede">The tool runs sixteen checks. Each one has a page here: what it is, what
       Tells reads to run it, how its result is decided, and why a website cares. Read the one
       your report flagged, or start with the group that sounds like your problem.</p>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>How a result is decided</h2>
       <p>Every check ends in one of four states. <strong>Pass</strong>: the readings were
         collected and nothing in them matched a known tell. <strong>Warning</strong>: a
@@ -63,7 +64,7 @@
         its weight, so one page's Fail on a heavyweight check can cost more than three
         Warnings elsewhere. Each check page below lists the findings that move its row.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>On the wire</h2>
       <ul>
           <li><a href="/checks/request-profile/"><strong>Request profile</strong></a>: Does the request introduce itself the way a real browser does?</li>
@@ -75,7 +76,7 @@
           <li><a href="/checks/latency/"><strong>Latency</strong></a>: Two clocks that should roughly agree.</li>
       </ul>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In the browser</h2>
       <ul>
           <li><a href="/checks/browser-data/"><strong>Browser data</strong></a>: The browser's own description of itself, checked for tool marks.</li>
@@ -87,14 +88,14 @@
           <li><a href="/checks/remote-control-tells/"><strong>Remote-control tells</strong></a>: Direct evidence that something else is holding the wheel.</li>
       </ul>
     </section>
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>Behaviour</h2>
       <ul>
           <li><a href="/checks/behavioural-classification/"><strong>Behavioural classification</strong></a>: How the pointer, keys and scroll actually moved.</li>
           <li><a href="/checks/interaction/"><strong>Interaction</strong></a>: Start, type one phrase, submit. How the input arrived, never what was typed.</li>
       </ul>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Which checks does a platform care about?</h2>
       <p>Not every site weighs these equally. The <a href="/checks/platforms/">platform
         guide</a> ranks the platforms Blowhorn works with by how hard their defences lean on
@@ -105,7 +106,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

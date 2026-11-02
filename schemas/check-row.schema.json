@@ -2,17 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tells.blowhorn.ai/schemas/v1/check-row.schema.json",
   "title": "Check row",
-  "description": "One row of the checks table as returned by buildCheckRows(): what a check observed and its pass, warn, fail or not-available status.",
+  "description": "One row of the checks as returned by buildCheckRows(): what a check observed and its pass, warn, fail or not-available status. summary is the plain-language result shown in the Checks performed list and, through buildVerdictGroupLines(), in the verdict card group lines; it never names a raw API. result (the raw observed value) and finding (the server message) appear only in each row's details.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "slug", "status", "symbol", "label", "result", "finding"],
+  "required": ["name", "slug", "group", "status", "symbol", "label", "result", "summary", "finding"],
   "properties": {
     "name": { "type": "string", "minLength": 1 },
     "slug": { "type": ["string", "null"] },
+    "group": { "enum": ["automation", "behavior", "fingerprint"] },
     "status": { "enum": ["pass", "warn", "fail", "na"] },
     "symbol": { "type": "string", "minLength": 1 },
     "label": { "type": "string", "minLength": 1 },
     "result": { "type": "string" },
+    "summary": { "type": "string", "minLength": 1, "description": "Plain-language result: the row text in Checks performed and the group line on the verdict card." },
     "finding": { "type": ["string", "null"] }
   }
 }

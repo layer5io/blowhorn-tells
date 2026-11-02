@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>Worker consistency</h1>
     <p class="lede">Ask the same question in four rooms of the browser. Do the answers match?</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>A page is not one context. Code also runs in Web Workers, iframes and a
           service worker, and each context can describe the browser independently. This
@@ -57,14 +58,14 @@
           compares the answers with the main window's.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>navigator.platform and user agent data in the window, a Web Worker, an iframe and a service worker</li>
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Warning:</strong> Any context disagrees with the window about platform or user agent data. One disagreement is enough; real browsers cannot disagree with themselves.</li>
@@ -72,7 +73,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>This is the check spoofers fear most, because it attacks the method rather
           than any single value. Patching a property in the visible window is easy; patching
@@ -80,7 +81,7 @@
           different order of work. Automation and anti-detection tools alike are routinely
           caught by a worker that still tells the truth.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>On the platforms Blowhorn works with, this tell rates <strong>Low everywhere</strong>:
         none of LinkedIn, X, Reddit, GitHub, Slack, Bluesky or Hacker News has public evidence
@@ -90,7 +91,7 @@
         this row without announcing it. The full reasoning is in the
         <a href="/checks/platforms/">platform guide</a>.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-consistency">Consistency</a> section. The same findings appear in the
@@ -106,7 +107,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

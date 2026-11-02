@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
     <h1>Managed bot score</h1>
     <p class="lede">Cloudflare's own bot score for this exact request.</p>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>What this check is</h2>
       <p>Sites behind Cloudflare's bot management get a score for every request,
           from 1 (certainly a bot) to 99 (certainly human), computed from Cloudflare's network
@@ -58,7 +59,7 @@
           table Tells does not compute itself.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>What Tells reads</h2>
       <ul>
           <li>The managed bot score Cloudflare assigned to the request</li>
@@ -66,7 +67,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read your result</h2>
       <ul>
           <li><strong>Fail:</strong> A score under 30, or the request is identified as verified bot traffic.</li>
@@ -76,7 +77,7 @@
       </ul>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>Why it matters</h2>
       <p>This is the closest thing on the page to ground truth, because it is an
           actual production gate's opinion rather than a reconstruction of one. A browser
@@ -84,7 +85,7 @@
           its traffic pattern resembles automation at network scale, which is exactly the
           gap that surprises people.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>Where this matters most</h2>
       <p>Across the platforms Blowhorn works with, rated in the
         <a href="/checks/platforms/">platform guide</a> (H = matters a lot, M = contributes,
@@ -96,7 +97,7 @@
       </ul>
       <p>Everywhere else in the set this one rates Low.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>In your report</h2>
       <p>Find it in the <a href="/#checks">checks table</a> on the tool page, with the detail in
         the <a href="/#panel-server-ip">Server / IP</a> section. The same findings appear in the
@@ -112,7 +113,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

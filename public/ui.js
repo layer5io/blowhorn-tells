@@ -7,22 +7,20 @@ import {
   buildWebRtcComparison,
   buildWorkerConsistencyRows
 } from "./report-view-model.js";
-import { buildCheckRows } from "./checks-view-model.js";
+import { buildCheckRows, buildVerdictGroupLines, CHECK_GROUPS } from "./checks-view-model.js";
+
+// One variant per group. The three groups stack, so each differs from the one above and below it.
+const CHECK_GROUP_VARIANT = { automation: "card-field", behavior: "card-stamp", fingerprint: "card-plain" };
 import { computeBehavior, interactionCompleted } from "./runtime.js";
 import { bool, escapeHtml, formatValue } from "./utils.js";
 import { renderSurfacePanels } from "./surface-ui.js";
-import { verdictVoice } from "./voice.js";
-
-const DOT_CLASSES = ["dot-good", "dot-warn", "dot-bad", "dot-muted"];
+import { verdictVoice, verdictWord } from "./voice.js";
 
 export function renderReport(state, report, options = {}) {
   const verdict = report.verdict || {};
-  const scoreCard = $("#scoreCard");
-  scoreCard.className = `score-card ${verdict.risk || "pending"}`;
-  const voice = verdictVoice(verdict.classification);
-  scoreCard.innerHTML = verdict.score == null ? escapeHtml(voice.label) : `${escapeHtml(String(verdict.score))}<small>${escapeHtml(voice.label)}</small>`;
-  renderVoice(voice, `Risk: ${verdict.risk || "unknown"}.`);
+  renderVoice(verdictVoice(verdict.classification));
 
+  renderVerdictCard(report);
   renderReasons(verdict.reasons || [], report);
   renderChecks(report);
   renderServerSummary(report.server || {});
@@ -33,7 +31,6 @@ export function renderReport(state, report, options = {}) {
   renderWorkerConsistency(report);
   renderBehaviorSummary(report);
   renderRuntime(state);
-  updateHeroReadoutFromReport(report);
 
   if (!options.preserveJson) {
     $("#jsonOut").textContent = JSON.stringify(report, null, 2);
@@ -70,18 +67,41 @@ function renderReasonEvidence(reason, report) {
   `;
 }
 
+// The checks list: one group per heading, each row a disclosure. The label is the check name and
+// its plain summary; opening it shows the raw observed value, the finding and the check's page.
 function renderChecks(report) {
-  const tbody = $("#coverageTable tbody");
-  tbody.innerHTML = buildCheckRows(report).map((row) => `
-    <tr class="check-row">
-      <td class="check-status"><span class="check-icon check-${escapeHtml(row.status)}" role="img" aria-label="${escapeHtml(row.label)}" title="${escapeHtml(row.label)}">${escapeHtml(row.symbol)}</span></td>
-      <th scope="row" class="check-name">${escapeHtml(row.name)}${row.slug ? `<a class="check-about" href="/checks/${escapeHtml(row.slug)}/">What this check means</a>` : ""}</th>
-      <td class="check-result">
-        <span class="check-observed">${escapeHtml(row.result)}</span>
-        ${row.finding ? `<span class="check-finding check-finding-${escapeHtml(row.status)}">${escapeHtml(row.finding)}</span>` : ""}
-      </td>
-    </tr>
-  `).join("");
+  const el = $("#checksGroups");
+  const rows = buildCheckRows(report);
+  el.innerHTML = CHECK_GROUPS.map(({ key, label }) => {
+    const items = rows.filter((row) => row.group === key);
+    if (!items.length) return "";
+    return `
+      <section class="check-group card ${CHECK_GROUP_VARIANT[key]}" id="checks-${key}" aria-labelledby="checks-${key}-title">
+        <h3 id="checks-${key}-title">${escapeHtml(label)}</h3>
+        <ul class="check-list">${items.map(renderCheckItem).join("")}</ul>
+      </section>
+    `;
+  }).join("");
+}
+
+function renderCheckItem(row) {
+  const observed = row.result && row.result !== row.summary ? `<p class="check-detail-line"><span class="check-detail-label">Observed</span> <code>${escapeHtml(row.result)}</code></p>` : "";
+  const finding = row.finding ? `<p class="check-detail-line check-finding-${escapeHtml(row.status)}">${escapeHtml(row.finding)}</p>` : "";
+  const about = row.slug ? `<a class="check-about" href="/checks/${escapeHtml(row.slug)}/">What this check means</a>` : "";
+  return `
+    <li class="check-item check-${escapeHtml(row.status)}">
+      <details>
+        <summary>
+          <span class="check-icon check-${escapeHtml(row.status)}" role="img" aria-label="${escapeHtml(row.label)}">${escapeHtml(row.symbol)}</span>
+          <span class="check-text">
+            <span class="check-name">${escapeHtml(row.name)}</span>
+            <span class="check-summary">${escapeHtml(row.summary)}</span>
+          </span>
+        </summary>
+        <div class="check-detail">${observed}${finding}${about}</div>
+      </details>
+    </li>
+  `;
 }
 
 function renderServerSummary(server) {
@@ -178,88 +198,40 @@ export function renderRuntime(state) {
     "Pointer distance": behavior.summary.pointerDistance,
     "Interaction test": challengeStatus(state)
   });
-  if (!state.report) {
-    updateHeroReadout({ behaviour: String(behavior.score) });
-  }
 }
 
 function challengeStatus(state) {
   return interactionCompleted(state) ? "complete" : state.interaction.startMs !== null ? "in progress" : "not started";
 }
 
-function updateHeroReadoutFromReport(report) {
-  const webdriver = report.client?.browser?.webdriver;
-  const score = report.verdict?.score;
-  const behaviorScore = report.client?.behavior?.score;
-  const webrtc = report.client?.network?.webrtc || {};
-  const memory = report.client?.surfaces?.performance?.memory || {};
-  const extensions = report.client?.surfaces?.extensions || {};
-  updateHeroReadout({
-    webdriver: webdriver == null ? "unknown" : webdriver ? "yes" : "no",
-    verdict: score == null ? "pending" : String(score),
-    behaviour: behaviorScore == null ? "sampling" : String(behaviorScore),
-    webrtc: formatHeroWebrtc(webrtc),
-    memory: memory.supported ? `${formatValue(memory.usedRatio)}` : "n/a",
-    extensions: extensions.enabled ? `${extensions.detectedCount || 0}/${extensions.checked || 0}` : "n/a",
-    risk: report.verdict?.risk || "pending",
-    score
-  });
+// The one verdict readout: the word, the score out of 100 on a bot-to-human scale, and one line per
+// check group. The lines link to their group in the checks list. Called with no report while a run
+// is collecting, which resets the card to its pending state.
+export function renderVerdictCard(report = null) {
+  const card = $("#verdictCard");
+  if (!card) return;
+  const verdict = report?.verdict || {};
+  const score = report && Number.isFinite(verdict.score) ? verdict.score : null;
+  $("#verdictWord").textContent = report ? verdictWord(verdict.classification) : verdictWord("pending");
+  $("#verdictWord").dataset.risk = report && verdict.risk ? verdict.risk : "pending";
+  $("#verdictScore").textContent = score == null ? "–" : String(score);
+  const marker = $("#verdictMarker");
+  marker.hidden = score == null;
+  marker.style.left = `${score ?? 0}%`;
+  $("#verdictGroups").innerHTML = report
+    ? renderVerdictLines(buildVerdictGroupLines(buildCheckRows(report)))
+    : `<p class="muted">Waiting for the inspection.</p>`;
 }
 
-export function updateHeroReadout(values = {}) {
-  const webdriver = $("#heroWebdriver");
-  const verdict = $("#heroVerdict");
-  const behaviour = $("#heroBehaviour");
-  const webrtc = $("#heroWebrtc");
-  const memory = $("#heroMemory");
-  const extensions = $("#heroExtensions");
-  if (webdriver && values.webdriver) webdriver.textContent = values.webdriver;
-  if (verdict && values.verdict) verdict.textContent = values.verdict;
-  if (behaviour && values.behaviour) behaviour.textContent = values.behaviour;
-  if (webrtc && values.webrtc) webrtc.textContent = values.webrtc;
-  if (memory && values.memory) memory.textContent = values.memory;
-  if (extensions && values.extensions) extensions.textContent = values.extensions;
-  updateScannerState(values);
-}
-
-function updateScannerState(values) {
-  const ring = $("#scannerRing");
-  if (!ring) return;
-  const score = Number(values.score ?? values.verdict);
-  const boundedScore = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
-  const risk = values.risk || "pending";
-  ring.className = `scanner-ring scanner-${escapeScannerRisk(risk)}`;
-  ring.style.setProperty("--scanner-score", String(boundedScore));
-  ring.style.setProperty("--scanner-angle", `${Math.round((boundedScore / 100) * 360)}deg`);
-
-  setScannerDot("#scannerWebdriverDot", values.webdriver === "yes" ? "bad" : values.webdriver === "no" ? "good" : "muted");
-  setScannerDot("#scannerWebrtcDot", values.webrtc === "mismatch" ? "bad" : values.webrtc === "matched" ? "good" : values.webrtc === "extra" ? "warn" : "muted");
-  setScannerDot("#scannerMemoryDot", values.memory && values.memory !== "n/a" && values.memory !== "pending" ? "good" : "muted");
-  setScannerDot("#scannerExtensionDot", extensionDotTone(values.extensions));
-}
-
-export function extensionDotTone(extensions) {
-  if (!extensions || extensions === "n/a" || extensions === "pending") return "muted";
-  return String(extensions).startsWith("0/") ? "good" : "warn";
-}
-
-function setScannerDot(selector, tone) {
-  const dot = $(selector);
-  if (!dot) return;
-  dot.classList.remove(...DOT_CLASSES);
-  dot.classList.add(`dot-${tone}`);
-}
-
-function escapeScannerRisk(risk) {
-  return ["low", "medium", "high", "pending"].includes(risk) ? risk : "pending";
-}
-
-function formatHeroWebrtc(webrtc) {
-  if (webrtc.publicIpLeakDifferentFromServer) return "mismatch";
-  if (webrtc.publicIpMatchedServer && webrtc.additionalPublicIps?.length) return "extra";
-  if (webrtc.publicIpMatchedServer) return "matched";
-  if (webrtc.supported === false) return "n/a";
-  return "pending";
+function renderVerdictLines(lines) {
+  return `<ul class="verdict-lines">${lines.map((line) => `
+    <li>
+      <a class="verdict-line verdict-${escapeHtml(line.status)}" href="#${escapeHtml(line.anchor)}">
+        <span class="check-icon check-${escapeHtml(line.status)}" role="img" aria-label="${escapeHtml(line.statusLabel)}">${escapeHtml(line.symbol)}</span>
+        <span class="verdict-line-text"><span class="verdict-line-group">${escapeHtml(line.label)}</span>: <span class="verdict-line-sentence">${escapeHtml(line.sentence)}</span></span>
+      </a>
+    </li>
+  `).join("")}</ul>`;
 }
 
 function renderKv(selector, obj) {

@@ -7,7 +7,7 @@ import { collectTells } from "./collect-tells.js";
 import { collectWorkers } from "./collect-workers.js";
 import { $ } from "./dom.js";
 import { computeBehavior } from "./runtime.js";
-import { renderReport, renderVoice, setStatus, updateHeroReadout } from "./ui.js";
+import { renderReport, renderVerdictCard, renderVoice, setStatus } from "./ui.js";
 import { failureVoice, verdictVoice } from "./voice.js";
 import { guessPlatformOs, guessUaOs, simplifyPerformanceEntry } from "./utils.js";
 
@@ -16,7 +16,7 @@ export async function runChecks(state) {
   const runBtn = $("#runBtn");
   runBtn.disabled = true;
   renderVoice(verdictVoice("pending"), "Collecting signals in this browser.");
-  updateHeroReadout({ webdriver: "checking", verdict: "pending", behaviour: "sampling" });
+  renderVerdictCard(null);
 
   try {
     const browser = await collectBrowser();

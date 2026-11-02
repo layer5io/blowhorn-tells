@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCheckRows, describeUserAgent } from "../public/checks-view-model.js";
+import { buildCheckRows, buildVerdictGroupLines, describeUserAgent, REASON_PLAIN } from "../public/checks-view-model.js";
 import { buildWorkerConsistencyRows } from "../public/report-view-model.js";
 import Ajv2020 from "ajv/dist/2020.js";
 import { readFileSync } from "node:fs";
@@ -235,5 +235,115 @@ describe("Interaction row", () => {
       const row = scoredWith(interaction)["Interaction"];
       expect(validateRow(row), JSON.stringify(validateRow.errors)).toBe(true);
     }
+  });
+});
+
+describe("verdict card fields", () => {
+  it("groups every row under automation, behavior or fingerprint", () => {
+    const groups = Object.fromEntries(buildCheckRows(report()).map((row) => [row.name, row.group]));
+    expect(groups).toMatchObject({
+      "Browser data": "automation",
+      "Remote-control tells": "automation",
+      "Behavioural classification": "behavior",
+      "Interaction": "behavior",
+      "Request profile": "fingerprint",
+      "Worker consistency": "fingerprint"
+    });
+    for (const group of Object.values(groups)) expect(["automation", "behavior", "fingerprint"]).toContain(group);
+  });
+
+  it("says a passing check in plain words, and keeps the raw value as result", () => {
+    const row = byName(buildCheckRows(report()))["Browser data"];
+    expect(row).toMatchObject({ status: "pass", summary: "WebDriver not detected" });
+    expect(row.result).toMatch(/^webdriver: false/);
+    const extensions = { ...goodClient, surfaces: { extensions: { enabled: true, detectedCount: 1, checked: 10 } } };
+    expect(byName(buildCheckRows(report({ client: extensions })))["Fingerprint surfaces"]).toMatchObject({ status: "pass", summary: "1 of 10 extensions visible" });
+  });
+
+  it("summarises a flagged check in plain words and keeps the server message as the finding", () => {
+    const row = byName(buildCheckRows(report({
+      client: { ...goodClient, browser: { ...goodClient.browser, webdriver: true } },
+      reasons: [{ id: "navigator_webdriver", severity: "high", message: "navigator.webdriver is true." }]
+    })))["Browser data"];
+    expect(row).toMatchObject({ status: "fail", summary: "WebDriver detected", finding: "navigator.webdriver is true." });
+    expect(row.summary).not.toMatch(/navigator\./);
+  });
+
+  it("never puts a raw API name in a summary, for any reason the scoring code can emit", () => {
+    const rawApi = /navigator\.|window\.|document\.|performance\.|Function\.|isTrusted|\.prototype/;
+    for (const [id, phrase] of Object.entries(REASON_PLAIN)) expect(phrase, id).not.toMatch(rawApi);
+  });
+
+  it("has a plain phrase for every reason the scoring code can emit", () => {
+    const source = readFileSync(new URL("../src/report-verdict.js", import.meta.url), "utf8");
+    const ids = [...source.matchAll(/penalize\([^,]+, "([a-z_0-9]+)"/g)].map((match) => match[1]);
+    expect(ids.length).toBeGreaterThan(50);
+    for (const id of ids) expect(REASON_PLAIN, id).toHaveProperty([id]);
+  });
+
+  it("uses the unavailable reason as the summary when a check did not run", () => {
+    const row = byName(buildCheckRows(report({ server: { ipIntel: { enabled: false } } })))["VPN / proxy / Tor intelligence"];
+    expect(row).toMatchObject({ status: "na", summary: "lookup off", result: "lookup off" });
+  });
+
+  it("gives every row a non-empty plain summary", () => {
+    for (const row of buildCheckRows(report())) expect(row.summary.trim().length).toBeGreaterThan(0);
+  });
+
+  it("maps each classification to one verdict word", async () => {
+    const { verdictWord } = await import("../public/voice.js");
+    expect(verdictWord("likely_human")).toBe("Looks human");
+    expect(verdictWord("suspicious")).toBe("Hard to tell");
+    expect(verdictWord("likely_bot")).toBe("Looks like a bot");
+    expect(verdictWord("pending")).toBe("In progress");
+    expect(verdictWord(undefined)).toBe("In progress");
+  });
+});
+
+describe("verdict group lines", () => {
+  const lineFor = (rows) => Object.fromEntries(buildVerdictGroupLines(rows).map((line) => [line.key, line]));
+  const row = (name, group, status, summary) => ({ name, group, status, summary, ...{ pass: { symbol: "✓", label: "Pass" }, warn: { symbol: "!", label: "Warning" }, fail: { symbol: "✕", label: "Fail" }, na: { symbol: "–", label: "Not available" } }[status] });
+
+  it("returns the three groups in display order, each with an anchor into the checks list", () => {
+    const lines = buildVerdictGroupLines(buildCheckRows(report()));
+    expect(lines.map((line) => line.key)).toEqual(["automation", "behavior", "fingerprint"]);
+    expect(lines.map((line) => line.anchor)).toEqual(["checks-automation", "checks-behavior", "checks-fingerprint"]);
+    expect(lines.map((line) => line.label)).toEqual(["Automation flags", "Behavior", "Fingerprint consistency"]);
+  });
+
+  it("says no automation flags when the automation rows pass", () => {
+    const lines = lineFor([row("Browser data", "automation", "pass", "WebDriver not detected"), row("Remote-control tells", "automation", "pass", "No remote-control tells found")]);
+    expect(lines.automation).toMatchObject({ status: "pass", symbol: "✓", statusLabel: "Pass", sentence: "none found" });
+  });
+
+  it("names the first automation flag and counts the rest", () => {
+    const lines = lineFor([
+      row("Browser data", "automation", "fail", "WebDriver detected"),
+      row("Remote-control tells", "automation", "warn", "Automation global found"),
+      row("Managed bot score", "automation", "pass", "Cloudflare bot score is not low")
+    ]);
+    expect(lines.automation).toMatchObject({ status: "fail", symbol: "✕", sentence: "2 flags: WebDriver detected, Automation global found" });
+  });
+
+  it("uses the first clean behaviour sentence when nothing is flagged, and the concern when something is", () => {
+    expect(lineFor([row("Behavioural classification", "behavior", "pass", "Pointer and key timing look human")]).behavior.sentence).toBe("Pointer and key timing look human");
+    expect(lineFor([row("Behavioural classification", "behavior", "warn", "Pointer and key input are borderline")]).behavior).toMatchObject({ status: "warn", symbol: "!", sentence: "Pointer and key input are borderline" });
+  });
+
+  it("counts fingerprint inconsistencies out of the judged checks and lists them", () => {
+    const lines = lineFor([
+      row("Request profile", "fingerprint", "warn", "Timezone differs."),
+      row("Browser data", "fingerprint", "fail", "Plugin list is impossible."),
+      row("Latency", "fingerprint", "pass", "Round-trip times look ordinary"),
+      row("TLS fingerprint", "fingerprint", "na", "no JA4 or JA3 fingerprint")
+    ]);
+    expect(lines.fingerprint).toMatchObject({ status: "fail", sentence: "2 of 3 inconsistent: Request profile, Browser data" });
+    expect(lineFor([row("Latency", "fingerprint", "pass", "x")]).fingerprint.sentence).toBe("All 1 check agrees");
+  });
+
+  it("reports a group with no judged rows as not checked, with n/a status", () => {
+    const line = lineFor([row("Interaction", "behavior", "na", "not taken")]).behavior;
+    expect(line).toMatchObject({ status: "na", symbol: "–", statusLabel: "Not available", sentence: "Not checked in this run" });
+    expect(lineFor([]).automation).toMatchObject({ status: "na", sentence: "Not checked in this run" });
   });
 });

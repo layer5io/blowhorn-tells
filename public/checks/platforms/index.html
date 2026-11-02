@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -52,7 +53,7 @@
       page ranks them by bot-detection sensitivity and maps each check in the guide to the
       platforms where it plausibly matters, with the evidence labelled for what it is.</p>
 
-    <section class="panel">
+    <section class="panel card card-plain">
       <h2>How to read the evidence</h2>
       <p>Claims are tagged. <strong>[Vendor]</strong>: the platform states it in its rules,
         help pages or API terms. <strong>[Reported]</strong>: researchers or practitioners
@@ -62,7 +63,7 @@
         proof that nobody looks.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>The ranking</h2>
       <div class="table-wrap">
         <table class="compact-table">
@@ -83,7 +84,7 @@
         connection (what you are). The bottom of the table is not defenceless; it is defended
         at a different layer entirely.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>1. LinkedIn</h2>
       <p>The most sensitive platform in this set, and the only one whose
       defences reach deep into the browser. LinkedIn's rules ban automation software outright
@@ -93,7 +94,7 @@
       characteristics, to session requests [Reported; LinkedIn disputes parts of that
       characterisation]. Treat every browser-side tell as live here.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>2. X</h2>
       <p>X permits automation through its API and forbids scripting its website,
       with permanent suspension as the stated penalty [Vendor]. In practice its defences are
@@ -102,7 +103,7 @@
       families decide most outcomes; deep browser fingerprinting is less documented here
       than on LinkedIn.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>3. Reddit</h2>
       <p>Reddit fights at the network edge. Unregistered automation meets a
       flat "blocked by network security" wall, and the reported triggers are request-shape
@@ -110,7 +111,7 @@
       [Reported]. Accounts with history fare better than fresh ones, but the first question
       Reddit asks is about your connection, not your browser's canvas.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>4. GitHub</h2>
       <p>GitHub expects automation and gives it an API, published rate limits
       (including content-creation caps that also bind the web UI), and an acceptable-use
@@ -118,14 +119,14 @@
       what gets accounts flagged is what they do in bulk, not what their browser looks
       like. The tells that matter are the behavioural ones, read at account scale.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>5. Slack</h2>
       <p>Slack's trust model is the workspace, the app and the token. It
       publishes tiered rate limits and says it detects apps acting spammy and quiets them
       [Vendor]. There is no public browser-fingerprinting surface to speak of; a session is
       judged by its credentials and its conduct inside a workspace that admitted it.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>6. Bluesky</h2>
       <p>An open protocol that expects bots and labels many of them good.
       Spam is defined behaviourally in its guidelines, rate limits are published per IP
@@ -133,7 +134,7 @@
       device signals [Vendor]. Browser tells barely register; network citizenship and
       behaviour carry what little weight exists.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-stamp">
       <h2>7. Hacker News</h2>
       <p>The least sensitive to browser tells, for a structural reason:
       the site is server-rendered with almost no JavaScript, so most browser tells have
@@ -141,7 +142,7 @@
       detection and shadowbans, confirmed in on-record moderator statements [Reported].
       The network family (which IP, how it behaves) is the whole game.</p>
     </section>
-    <section class="panel">
+    <section class="panel card card-field">
       <h2>The matrix</h2>
       <p>Every check against every platform. Follow a check name for its full page, including
         the per-platform reasoning.</p>
@@ -179,7 +180,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">

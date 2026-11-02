@@ -9,7 +9,7 @@ import {
   setupSensorProbe
 } from "./runtime.js";
 import { state } from "./state.js";
-import { renderRuntime, setStatus, updateHeroReadout } from "./ui.js";
+import { renderRuntime, setStatus } from "./ui.js";
 import { renderPerformanceMemorySurface } from "./surface-ui.js";
 
 boot();
@@ -22,7 +22,6 @@ function boot() {
   setupChallenge(state, renderRuntime, runChecks);
   setupButtons(state, runChecks, setStatus);
   renderRuntime(state);
-  updateHeroReadout();
 
   runChecks(state);
   BEHAVIOR_CHECKPOINTS_MS.forEach((delay) => {

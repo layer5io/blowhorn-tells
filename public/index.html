@@ -12,6 +12,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/BricolageGrotesque-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://blowhorn.ai/assets/brand/cards.css">
   <link rel="stylesheet" href="/styles.css">
   <!-- Google Analytics: the same GA4 property as blowhorn.ai. No consent banner on this tool. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZLYGVE3HN"></script>
@@ -49,7 +50,7 @@
       <p class="eyebrow">Free bot detection test</p>
       <h1 id="pageTitle">Am I a Bot?</h1>
       <p class="lede">What websites can see about your browser. Every bot-detection and fingerprinting tell this page can read, in plain words.</p>
-      <aside class="dev-note" aria-label="For developers">
+      <aside class="card card-dispatch dev-note" aria-label="For developers">
         <p class="label">For developers</p>
         <p>Stand at attention. Scripts too: point your Playwright or Puppeteer run here and read the JSON.</p>
       </aside>
@@ -61,35 +62,23 @@
           sizes="(max-width: 720px) 100vw, 640px" width="960" height="540"
           alt="Sleeper Cell, the unit's privacy scout, her radar lighting up two bots">
       </figure>
-      <div class="scanner-shell" aria-hidden="true">
-        <div class="scanner-head">
-          <span class="scanner-dot"></span>
-          <span class="scanner-dot"></span>
-          <span class="scanner-dot"></span>
-        </div>
-        <div class="scanner-body">
-          <div id="scannerRing" class="scanner-ring scanner-pending" style="--scanner-score: 0; --scanner-angle: 0deg;">
-            <span id="scannerWebdriverDot" title="WebDriver"></span>
-            <span id="scannerWebrtcDot" title="WebRTC"></span>
-            <span id="scannerMemoryDot" title="Memory"></span>
-            <span id="scannerExtensionDot" title="Extensions"></span>
+      <section class="card card-stamp verdict-card" id="verdictCard" aria-labelledby="verdictWord">
+        <p class="label">Verdict</p>
+        <h2 id="verdictWord" class="verdict-word">In progress</h2>
+        <p class="verdict-score"><span id="verdictScore">–</span><span class="verdict-of"> / 100</span></p>
+        <div class="verdict-gauge" role="img" aria-label="Bot to human scale, from 0 to 100. Under 45 reads as a bot, 45 to 74 is hard to tell, 75 and up looks human.">
+          <div class="verdict-track">
+            <span class="verdict-tick" style="left: 45%"></span>
+            <span class="verdict-tick" style="left: 75%"></span>
+            <span id="verdictMarker" class="verdict-marker" hidden></span>
           </div>
-          <div class="scanner-readout">
-            <span>WebDriver</span>
-            <strong id="heroWebdriver">collecting</strong>
-            <span>Verdict score</span>
-            <strong id="heroVerdict">pending</strong>
-            <span>Behaviour</span>
-            <strong id="heroBehaviour">sampling</strong>
-            <span>WebRTC</span>
-            <strong id="heroWebrtc">pending</strong>
-            <span>Memory</span>
-            <strong id="heroMemory">pending</strong>
-            <span>Extensions</span>
-            <strong id="heroExtensions">pending</strong>
-          </div>
+          <div class="verdict-ends"><span>Bot</span><span>Human</span></div>
         </div>
-      </div>
+        <p class="verdict-key">Higher is more human.</p>
+        <div id="verdictGroups" class="verdict-groups">
+          <p class="muted">Waiting for the inspection.</p>
+        </div>
+      </section>
     </div>
     <div class="actions">
       <button id="runBtn" class="button-primary" type="button">Run the inspection</button>
@@ -99,15 +88,13 @@
   </section>
 
   <main id="main">
-    <section class="panel summary-panel" aria-live="polite">
+    <section class="panel card card-paper summary-panel" aria-live="polite">
       <img id="verdictFigure" class="verdict-figure" src="/assets/brand/sleeper-cell-base.webp" width="72" height="72"
         alt="Sleeper Cell, the unit's privacy scout, sweeping for bots with a radar">
       <div>
-        <p class="eyebrow">Verdict</p>
         <h2 id="verdictTitle">Hold still, recruit.</h2>
         <p id="status">Inspection in progress.</p>
       </div>
-      <div id="scoreCard" class="score-card pending">Inspecting</div>
     </section>
 
     <section class="panel" id="checks">
@@ -118,21 +105,12 @@
         <li><span class="check-icon check-fail" aria-hidden="true">✕</span>Fail</li>
         <li><span class="check-icon check-na" aria-hidden="true">–</span>Not available</li>
       </ul>
-      <div class="table-wrap">
-        <table id="coverageTable" class="checks-table">
-          <thead>
-            <tr>
-              <th scope="col"><span class="visually-hidden">Status</span></th>
-              <th scope="col">Check</th>
-              <th scope="col">What we saw</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div id="checksGroups" class="check-groups">
+        <p class="muted">Waiting for the inspection.</p>
       </div>
     </section>
 
-    <details class="panel challenge-panel toggle-panel" id="panel-challenge">
+    <details class="panel card card-dispatch challenge-panel toggle-panel" id="panel-challenge">
       <summary>
         <span class="summary-icon" aria-hidden="true"></span>
         <span>Interaction test</span>
@@ -160,7 +138,7 @@
       <button id="collapseAllBtn" class="button-secondary" type="button">Collapse all</button>
     </div>
     <section class="masonry">
-      <details class="panel toggle-panel" id="panel-top-signals" open>
+      <details class="panel card card-stamp toggle-panel" id="panel-top-signals" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Top signals</span>
@@ -168,7 +146,7 @@
         </summary>
         <div id="reasons" class="list muted">No report yet.</div>
       </details>
-      <details class="panel toggle-panel" id="panel-runtime" open>
+      <details class="panel card card-plain toggle-panel" id="panel-runtime" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Runtime</span>
@@ -176,7 +154,7 @@
         </summary>
         <div id="runtime" class="kv"></div>
       </details>
-      <details class="panel toggle-panel" id="panel-server-ip" open>
+      <details class="panel card card-field toggle-panel" id="panel-server-ip" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Server / IP</span>
@@ -184,7 +162,7 @@
         </summary>
         <div id="serverSummary" class="kv"></div>
       </details>
-      <details class="panel toggle-panel" id="panel-browser" open>
+      <details class="panel card card-stamp toggle-panel" id="panel-browser" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Browser</span>
@@ -192,7 +170,7 @@
         </summary>
         <div id="browserSummary" class="kv"></div>
       </details>
-        <details class="panel toggle-panel" id="panel-behaviour" open>
+        <details class="panel card card-field toggle-panel" id="panel-behaviour" open>
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Behaviour detail</span>
@@ -200,7 +178,7 @@
         </summary>
         <div id="behaviorSummary" class="kv"></div>
       </details>
-      <details class="panel toggle-panel" id="panel-webrtc">
+      <details class="panel card card-dispatch toggle-panel" id="panel-webrtc">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>WebRTC comparison</span>
@@ -208,7 +186,7 @@
         </summary>
         <div id="webrtcComparison" class="kv"></div>
       </details>
-      <details class="panel toggle-panel" id="panel-consistency">
+      <details class="panel card card-field toggle-panel" id="panel-consistency">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Consistency</span>
@@ -245,7 +223,7 @@
           </table>
         </div>
       </details>
-        <details class="panel toggle-panel" id="panel-network">
+        <details class="panel card card-stamp toggle-panel" id="panel-network">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Network identity</span>
@@ -253,7 +231,7 @@
         </summary>
           <div id="networkIdentity" class="kv"></div>
           </details>
-          <details class="panel toggle-panel" id="panel-surfaces">
+          <details class="panel card card-plain toggle-panel" id="panel-surfaces">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Surface indicators</span>
@@ -261,7 +239,7 @@
         </summary>
             <div id="surfaceSummary" class="kv"></div>
           </details>
-          <details class="panel toggle-panel" id="panel-media">
+          <details class="panel card card-field toggle-panel" id="panel-media">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Media / DRM</span>
@@ -269,7 +247,7 @@
         </summary>
             <div id="mediaDrmSummary" class="surface-grid muted">No report yet.</div>
           </details>
-          <details class="panel toggle-panel" id="panel-memory">
+          <details class="panel card card-stamp toggle-panel" id="panel-memory">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Performance memory</span>
@@ -277,7 +255,7 @@
         </summary>
             <div id="memoryVisual" class="visual-block muted">No report yet.</div>
           </details>
-          <details class="panel toggle-panel" id="panel-sensors">
+          <details class="panel card card-dispatch toggle-panel" id="panel-sensors">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Sensors</span>
@@ -285,7 +263,7 @@
         </summary>
             <div id="sensorVisual" class="visual-block muted">No report yet.</div>
           </details>
-          <details class="panel toggle-panel" id="panel-resources">
+          <details class="panel card card-field toggle-panel" id="panel-resources">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Resource timing</span>
@@ -293,7 +271,7 @@
         </summary>
             <div id="resourceTimeline" class="visual-block muted">No report yet.</div>
           </details>
-          <details class="panel toggle-panel" id="panel-extensions">
+          <details class="panel card card-stamp toggle-panel" id="panel-extensions">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Browser extensions</span>
@@ -301,7 +279,7 @@
         </summary>
             <div id="extensionProbeSummary" class="visual-block muted">No report yet.</div>
           </details>
-          <details class="panel toggle-panel" id="panel-voices">
+          <details class="panel card card-plain toggle-panel" id="panel-voices">
         <summary>
           <span class="summary-icon" aria-hidden="true"></span>
           <span>Voices & policies</span>
@@ -311,7 +289,7 @@
       </details>
     </section>
 
-    <details class="panel raw-panel toggle-panel">
+    <details class="panel card card-dispatch raw-panel toggle-panel">
       <summary>
         <span class="summary-icon" aria-hidden="true"></span>
         <span>Raw report</span>
@@ -323,7 +301,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <div class="footer-panel">
+      <div class="footer-panel card card-plain">
         <div class="footer-top">
           <div class="footer-brand">
             <a class="footer-logo" href="https://blowhorn.ai/" aria-label="Blowhorn home">
