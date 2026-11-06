@@ -1220,6 +1220,20 @@ pre {
   content: "-";
 }
 
+.challenge-panel .challenge-toggle-icon::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.challenge-panel[open] .challenge-toggle-icon::before {
+  transform: translateY(2px) rotate(225deg);
+}
+
 .toggle-panel summary small {
   grid-column: 2;
   color: var(--muted);
