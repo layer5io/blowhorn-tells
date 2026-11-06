@@ -1,8 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 🙋🏾🙋🏼 Question
-    url: https://discuss.layer5.io
-    about: Submit your question on the discussion forum.
-  - name: 💬 Layer5 Community Slack
-    url: http://slack.layer5.io
-    about: Chat with the community in the #websites channel.
+  - name: ✉️ Email Support
+    url: mailto:support@blowhorn.ai
+    about: Send an email to support@blowhorn.ai for support and questions.
