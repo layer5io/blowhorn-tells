@@ -18,7 +18,6 @@ assignees: ''
 <!-- Stipulations of functional behavior or non-functional items that must be in-place in order for the issue to be closed. -->
 
 ---
-#### Contributor [Guides](https://docs.meshery.io/project/contributing) and Resources
-- 🛠 [Meshery Build & Release Strategy](https://docs.meshery.io/project/build-and-release)
-- 🎨 Wireframes and [designs for Layer5 site](https://www.figma.com/file/5ZwEkSJwUPitURD59YHMEN/Layer5-Designs) in Figma [(open invite)](https://www.figma.com/team_invite/redeem/GvB8SudhEOoq3JOvoLaoMs)
-- 🙋🏾🙋🏼 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io)
+#### Contributor Guides and Resources
+- 📚 [Contributing Guide](CONTRIBUTING.md)
+- 🙋 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io) (#websites channel)
