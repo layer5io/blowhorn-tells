@@ -14,4 +14,4 @@ assignees: ''
 ---
 #### Contributor Guides and Resources
 - 📚 [Contributing Guide](CONTRIBUTING.md)
-- 🙋 Questions: [Layer5 Discussion Forum](https://discuss.layer5.io) and [Layer5 Community Slack](http://slack.layer5.io) (#websites channel)
+- ✉️ Questions: [support@blowhorn.ai](mailto:support@blowhorn.ai)
