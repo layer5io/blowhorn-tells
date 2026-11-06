@@ -35,3 +35,123 @@ for (const width of [320, 375, 390, 1280]) {
     });
   });
 }
+
+test.describe("independent panel controls", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+  });
+
+  const diagnosticPanels = [
+    "#panel-top-signals",
+    "#panel-runtime",
+    "#panel-server-ip",
+    "#panel-browser",
+    "#panel-behaviour",
+    "#panel-webrtc",
+    "#panel-consistency",
+    "#panel-network",
+    "#panel-surfaces",
+    "#panel-media",
+    "#panel-memory",
+    "#panel-sensors",
+    "#panel-resources",
+    "#panel-extensions",
+    "#panel-voices"
+  ];
+
+  test("Interaction Test toggles independently", async ({ page }) => {
+    const challenge = page.locator("#panel-challenge");
+
+    // Capture the initial states of all diagnostic panels.
+    const initialStates = await Promise.all(
+      diagnosticPanels.map((selector) =>
+        page.locator(selector).evaluate((panel) => panel.open)
+      )
+    );
+
+    // Interaction Test starts collapsed.
+    await expect(challenge).not.toHaveAttribute("open", "");
+
+    // Open Interaction Test.
+    await challenge.locator("summary").click();
+    await expect(challenge).toHaveAttribute("open", "");
+
+    // Diagnostic panels should retain their initial states.
+    const statesAfterOpening = await Promise.all(
+      diagnosticPanels.map((selector) =>
+        page.locator(selector).evaluate((panel) => panel.open)
+      )
+    );
+
+    expect(statesAfterOpening).toEqual(initialStates);
+
+    // Close Interaction Test.
+    await challenge.locator("summary").click();
+    await expect(challenge).not.toHaveAttribute("open", "");
+
+    // Diagnostic panels should still retain their initial states.
+    const statesAfterClosing = await Promise.all(
+      diagnosticPanels.map((selector) =>
+        page.locator(selector).evaluate((panel) => panel.open)
+      )
+    );
+
+    expect(statesAfterClosing).toEqual(initialStates);
+  });
+
+  test("Expand all and Collapse all affect only diagnostic panels", async ({ page }) => {
+    const challenge = page.locator("#panel-challenge");
+
+    // Open Interaction Test first.
+    await challenge.locator("summary").click();
+    await expect(challenge).toHaveAttribute("open", "");
+
+    // Collapse all diagnostic panels.
+    await page.locator("#collapseAllBtn").click();
+
+    for (const selector of diagnosticPanels) {
+      await expect(page.locator(selector)).not.toHaveAttribute("open", "");
+    }
+
+    // Interaction Test should remain open.
+    await expect(challenge).toHaveAttribute("open", "");
+
+    // Expand all diagnostic panels.
+    await page.locator("#expandAllBtn").click();
+
+    for (const selector of diagnosticPanels) {
+      await expect(page.locator(selector)).toHaveAttribute("open", "");
+    }
+
+    // Interaction Test should still remain open.
+    await expect(challenge).toHaveAttribute("open", "");
+  });
+
+  test("bulk buttons reflect diagnostic panel states", async ({ page }) => {
+    const expandAll = page.locator("#expandAllBtn");
+    const collapseAll = page.locator("#collapseAllBtn");
+
+    // Initial state: some diagnostic panels are open and others are closed.
+    await expect(expandAll).toBeEnabled();
+    await expect(collapseAll).toBeEnabled();
+
+    // Collapse all diagnostic panels.
+    await collapseAll.click();
+
+    await expect(collapseAll).toBeDisabled();
+    await expect(expandAll).toBeEnabled();
+
+    // Manually open one diagnostic panel.
+    await page.locator("#panel-runtime summary").click();
+
+    // Both buttons should now be enabled.
+    await expect(expandAll).toBeEnabled();
+    await expect(collapseAll).toBeEnabled();
+
+    // Expand all diagnostic panels.
+    await expandAll.click();
+
+    await expect(expandAll).toBeDisabled();
+    await expect(collapseAll).toBeEnabled();
+  });
+});
